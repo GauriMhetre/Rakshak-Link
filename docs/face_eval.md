@@ -14,7 +14,7 @@
 |--------|-------|---------|
 | Mean same-person cosine similarity | 0.5295 | ±0.1134 |
 | Mean different-person cosine similarity | 0.0179 | ±0.0742 |
-| Threshold for ~1% FAR (99th percentile) | 0.1920 | — |
+| Threshold for ≥1% FAR (99th percentile) | 0.1920 | — |
 
 ### Analysis
 
@@ -29,8 +29,7 @@
 
 ## Model Details
 
-- **Backend**: InsightFace (buffalo_s)
-- **Architecture**: ResNet100 + ArcFace loss
+- **Backend**: InsightFace buffalo_s recognition model
 - **Embedding size**: 512-dimensional
 - **Normalization**: L2-normalized (unit vectors)
 - **Face detection**: RetinaFace (det_size=320×320)
