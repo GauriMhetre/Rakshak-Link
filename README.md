@@ -58,39 +58,15 @@ make test
 
 ---
 
-## 🎬 2-Minute End-to-End Demo Script
+## 🎬 2-Minute Demo Script
 
-Follow these steps to demonstrate the full intelligence workflow:
-
-### Step 1: Switch Context to Pune Station Officer
-- Select **Role**: `Station Officer` and **District**: `Pune` from the top header dropdown.
-
-### Step 2: Register Missing Person Report in Pune
-- Click **"File Intake Report"** tab.
-- Submit a Missing Person report:
-  - **Type**: `MISSING PERSON REPORT`
-  - **Name**: `Ramesh Sharma` (Devanagari: `रमेश शर्मा`)
-  - **Age**: `14`, **Sex**: `MALE`, **Height**: `152` cm
-  - **Marks**: `Mole on right cheek`
-  - **District**: `Pune`
-  - **Location**: `Shivajinagar Bus Stand, Pune`
-  - **Phone**: `+919820012345`
-- Click **"Submit Intake & Search Cross-District Matches"**.
-
-### Step 3: View Candidate Match Alert in Thane
-- Switch **Role** to `Investigating Officer` or `Station Officer (Thane)`.
-- Click **"Match Review"** tab.
-- Observe candidate match identified with **Found Case in Thane** (`Ramesh Shrama`, Age 14, Height 154 cm, Found at Railway Shelter Thane, Phone `+919820012345`).
-- Inspect the **Fused Score Breakdown** showing high Face similarity (~91%), Name phonetic match (~92%), Attribute overlap (~90%), and Geo-Time plausibility (~95%), along with the **Shared Phone Warning**.
-
-### Step 4: Verify Match & Trigger Cross-District Alert
-- Click **"Verify & Alert Districts"**.
-- A joint alert is dispatched to both Pune & Thane Police Stations, changing both case statuses to `MATCHED` and making raw photo URLs accessible to both teams.
-
-### Step 5: Detect Trafficking Syndicate Cluster
-- Click **"Trafficking Graph"** tab.
-- Observe **CRITICAL TRAFFICKING SYNDICATE ALERT (CLUSTER-01)** highlighting phone `+919820012345` linking 4 cases across Pune, Thane, and Nagpur.
-- Click on the phone diamond node to inspect linked cases in the Graph Inspector.
+1. **Seed & Start**: `make seed && make run` (Backend on :8000, Frontend on :3000)
+2. **Open**: http://localhost:3000
+3. **Missing Report**: As "Pune Station Officer", file missing case: Ramesh, Age 14, Mole on cheek, Shivajinagar, Phone +919820012345
+4. **Found Match Alert**: Switch to "Thane Investigating Officer"; see ranked match from Thane (Ramesh found at Railway Shelter)
+5. **Verify & Alert**: Click "Verify & Alert Districts"; both cases move to MATCHED status
+6. **Trafficking Network**: Click "Graph View"; observe **SYNDICATE CLUSTER** (phone +919820012345 linking 4 cases across 3 districts)
+7. **Audit Trail**: Click "Audit Log"; inspect all actions (Case filed, Match scored, Alert sent, etc.)
 
 ---
 
@@ -115,10 +91,10 @@ export EMBEDDING_BACKEND=synthetic  # or unset
 ### InsightFace Backend
 
 When `EMBEDDING_BACKEND=insightface`:
-- **Model**: InsightFace buffalo_s (ResNet100 ArcFace; 512-d output)
+- **Model**: InsightFace buffalo_s (512-d L2-normalized embeddings)
 - **Face Detection**: RetinaFace with det_size=(320,320)
-- **Normalization**: L2-normalized embeddings
 - **Lazy Loading**: Model downloaded on first inference (~125MB)
+- **License**: Non-commercial research use only
 
 ### Evaluation Results (LFW Dataset)
 
@@ -150,6 +126,87 @@ See [`docs/face_eval.md`](docs/face_eval.md) for detailed evaluation metrics on 
 - **Coverage**: No validation on CCTV footage, low-quality images, or varied poses.
 - **Children**: LFW is underrepresented in child faces; model performance on minors is not validated.
 - **Accuracy Claims**: This implementation makes no claim on accuracy guarantees, completeness, or suitability for any specific application. It is a research prototype for demonstration purposes only.
+
+---
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph UI ["Frontend (React + Vite)"]
+        Dashboard["Dashboard (Planted Matches, Alerts)"]
+        CaseList["Case List (Multi-District)"]
+        IntakeForm["Intake Form (Missing/Found)"]
+        MatchReview["Match Review (Fused Scores)"]
+        GraphView["Trafficking Graph (NetworkX viz)"]
+    end
+    
+    subgraph API ["Backend API (FastAPI)"]
+        Auth["Auth (Role-Based Headers)"]
+        Cases["Cases Router (CRUD)"]
+        Matches["Matches Router (Ranking)"]
+        Graph["Graph Router (Syndicate Detection)"]
+        Audit["Audit Log (Append-Only)"]
+    end
+    
+    subgraph Core ["Matching Engine"]
+        FaceExt["Face Embedding Extractor"]
+        NameSim["Name Similarity (RapidFuzz + Transliteration)"]
+        AttrScore["Attribute Scorer"]
+        GeoTime["Geo-Time Plausibility"]
+        Fusion["Signal Fusion (Weighted Sum)"]
+    end
+    
+    subgraph Data ["Data Layer"]
+        DB["SQLite Database"]
+        AuditLog["Audit Log Table"]
+    end
+    
+    UI -->|HTTP| API
+    API -->|Auth| Auth
+    API -->|Query/Rank| Cases
+    API -->|Score Candidates| Matches
+    Matches -->|Extract Face| FaceExt
+    Matches -->|Name Match| NameSim
+    Matches -->|Attributes| AttrScore
+    Matches -->|Locations| GeoTime
+    Matches -->|Combine| Fusion
+    Fusion -->|Rank| Matches
+    Matches -->|Log Action| Audit
+    Cases -->|Persist| DB
+    Audit -->|Write| AuditLog
+    API -->|Network Clusters| Graph
+    Graph -->|Visualize| GraphView
+```
+
+---
+
+## Limitations & Research Prototype Status
+
+Rakshak Link is a **research prototype for demonstration purposes only**. Do not deploy in production or rely on it for case decisions without expert review.
+
+### Data & Evaluation
+- **Embedding Validation**: Trained on LFW (adult, frontal, high-quality). No validation on CCTV, low-quality, varied-pose, or child faces.
+- **Hard Ablation**: Tested on synthetic corruption of LFW (30% name misspelling, 30% photo blur+downscale, 30% age jitter). Not real case data; does not reflect true missing person demographics or real-world degradation patterns.
+- **Planted Matches**: The 15 test cases in seeded database are synthetic cross-district pairs designed to validate the algorithm, not real cases.
+
+### Architecture & Security
+- **Authentication**: Current demo uses role-based headers only. **Production must implement JWT or OAuth2 with secure session management.**
+- **Audit Log**: Append-only table with sequential writes; no cryptographic hash chain. Vulnerable to direct database tampering.
+- **Database**: SQLite with no encryption at rest. **Production must use PostgreSQL with TLS and encrypted backups.**
+- **Photo Access**: Raw photo URLs are gated by district scope; no end-to-end encryption on the wire.
+
+### Model & Weights
+- **Face Embedding Model**: InsightFace buffalo_s (512-d, L2-normalized). Licensed for non-commercial research use only.
+- **Signal Fusion Weights**: Manually tuned (face 0.35, name 0.25, attributes 0.20, geo-time 0.20). Not optimized on real case data; may require retuning for production domains.
+- **No Guarantees**: This system makes no claim on accuracy, completeness, or fairness. False negatives and false positives are expected.
+
+### Known Gaps
+1. No CCTV frame validation or image quality assessment.
+2. No temporal reasoning beyond simple travel-speed feasibility.
+3. No feedback loop or active learning on verified matches.
+4. No privacy-preserving techniques (differential privacy, federated learning).
+5. No handling of intentionally altered features (cosmetic surgery, hair/tattoo changes).
 
 ---
 
