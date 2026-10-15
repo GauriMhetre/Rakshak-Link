@@ -69,3 +69,5 @@ class AuditLog(Base):
     action = Column(String, index=True)
     target_id = Column(String, nullable=True)
     details = Column(JSON, nullable=True)
+    previous_hash = Column(String, nullable=True)  # Hash of previous audit log entry
+    entry_hash = Column(String, nullable=True)  # SHA-256 hash of this entry

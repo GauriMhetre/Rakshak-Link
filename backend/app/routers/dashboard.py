@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from backend.app.database import get_db
 from backend.app.models import Case, MatchLink, AuditLog
-from backend.app.auth import get_user_context, UserContext, log_audit_event
+from backend.app.auth import get_user_context, UserContext, log_audit_event, _compute_entry_hash
 from backend.app.services.graph_service import build_trafficking_graph
 from backend.app.services.matching import evaluate_match_score
 from backend.seed import PLANTED_MATCHES_DATA
+import json
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -111,4 +112,49 @@ def get_dashboard_metrics(
         "district_stats": district_stats,
         "clusters": graph_data["flagged_clusters"],
         "recent_activity": audit_stream,
+    }
+
+@router.get("/audit/verify")
+def verify_audit_chain(
+    user_context: UserContext = Depends(get_user_context),
+    db: Session = Depends(get_db)
+):
+    """Verify the integrity of the audit log hash chain."""
+    audit_entries = db.query(AuditLog).order_by(AuditLog.id).all()
+    
+    if not audit_entries:
+        return {"status": "OK", "entries_verified": 0, "tampering_detected": False}
+    
+    # Verify hash chain
+    previous_hash = "0" * 64  # Genesis
+    tampering_detected = False
+    
+    for entry in audit_entries:
+        # Recompute expected hash
+        entry_data = {
+            "timestamp": entry.timestamp.isoformat(),
+            "user_role": entry.user_role,
+            "user_district": entry.user_district,
+            "action": entry.action,
+            "target_id": entry.target_id,
+            "details": entry.details,
+            "previous_hash": entry.previous_hash,
+        }
+        expected_hash = _compute_entry_hash(entry_data)
+        
+        # Check if chain link is valid
+        if entry.previous_hash != previous_hash:
+            tampering_detected = True
+            break
+        
+        if entry.entry_hash != expected_hash:
+            tampering_detected = True
+            break
+        
+        previous_hash = entry.entry_hash
+    
+    return {
+        "status": "TAMPERED" if tampering_detected else "OK",
+        "entries_verified": len(audit_entries),
+        "tampering_detected": tampering_detected,
     }
