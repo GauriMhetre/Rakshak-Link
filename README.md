@@ -130,9 +130,16 @@ See [`docs/face_eval.md`](docs/face_eval.md) for detailed evaluation metrics on 
 | Mean different-person cosine similarity | 0.0179 | ±0.0742 |
 | Threshold for ~1% FAR | 0.1920 | — |
 
-**Test Results** (InsightFace backend, 15 planted cross-district matches):
-- Precision@1: **100%** (15/15 top-1 matches correct)
-- Precision@5: **100%** (15/15 ranked in top-5)
+**LFW Identification Benchmark** (see [`docs/lfw_identification.md`](docs/lfw_identification.md)):
+- Rank-1 accuracy: 100% (60/60 correct top match)
+- Rank-5 accuracy: 100% (60/60 correct in top-5)
+
+**Signal Ablation on Planted Matches** (see [`docs/ablation.md`](docs/ablation.md)):
+- Face-only: 100% @ Rank-1, 100% @ Rank-5
+- Name-only: 100% @ Rank-1, 100% @ Rank-5
+- All signals fused: 100% @ Rank-1, 100% @ Rank-5
+
+(Note: Planted pairs share same person, phone numbers, and similar attributes.)
 
 ### Interpretation
 
