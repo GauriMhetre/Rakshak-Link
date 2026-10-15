@@ -24,7 +24,7 @@ Rakshak Link is an AI-powered intelligence portal built for Police Station Offic
 
 4. **District-Scoped Access & Audit Logging**:
    - Role-based authorization headers (`Station Officer`, `CWC Officer`, `Investigating Officer`).
-   - Scoped database views and immutable audit log trace of all views, matches, and decisions.
+   - Scoped database views and append-only audit log trace of all views, matches, and decisions.
 
 ---
 
