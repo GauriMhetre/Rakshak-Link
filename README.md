@@ -124,13 +124,17 @@ When `EMBEDDING_BACKEND=insightface`:
 
 See [`docs/face_eval.md`](docs/face_eval.md) for detailed evaluation metrics on LFW face pairs:
 
-| Metric | Value |
-|--------|-------|
-| Mean same-person cosine similarity | 0.8742 |
-| Mean different-person cosine similarity | 0.0156 |
-| Threshold for ~1% FAR | 0.4521 |
+| Metric | Value | Std Dev |
+|--------|-------|---------|
+| Mean same-person cosine similarity | 0.5295 | ±0.1134 |
+| Mean different-person cosine similarity | 0.0179 | ±0.0742 |
+| Threshold for ~1% FAR | 0.1920 | — |
 
-### Limitations
+**Test Results** (InsightFace backend, 15 planted cross-district matches):
+- Precision@1: **100%** (15/15 top-1 matches correct)
+- Precision@5: **100%** (15/15 ranked in top-5)
+
+### Interpretation
 
 - **Commercial Use**: InsightFace pretrained models are for non-commercial research use only.
 - **Dataset Bias**: LFW is predominantly adult, good-quality frontal/near-frontal faces from unconstrained photographs.
