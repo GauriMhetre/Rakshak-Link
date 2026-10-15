@@ -1,9 +1,13 @@
 import math
 import datetime
+import os
 from typing import List, Dict, Any, Optional
 import numpy as np
 from rapidfuzz import fuzz
 from .transliteration import compute_phonetic_fuzzy_similarity
+
+# --- Embedding Configuration ---
+EMBEDDING_DIM = 512  # InsightFace buffalo_s dimension; synthetic also uses 512
 
 # --- Pluggable Embedding Extractor Interface ---
 class EmbeddingExtractorInterface:
@@ -18,20 +22,30 @@ class EmbeddingExtractorInterface:
 class SyntheticEmbeddingExtractor(EmbeddingExtractorInterface):
     """
     Default deterministic synthetic embedding extractor.
-    LIMITATION: Generates pseudo-random 128-dim normalized vectors based on input hash.
+    LIMITATION: Generates pseudo-random 512-dim normalized vectors based on input hash.
     For production face recognition, replace with deep learning vision model.
     """
     def extract_embedding(self, input_data: str) -> List[float]:
         seed_val = int(abs(hash(input_data))) % (2**32)
         rng = np.random.RandomState(seed_val)
-        vec = rng.randn(128)
+        vec = rng.randn(EMBEDDING_DIM)
         norm = np.linalg.norm(vec)
         if norm > 0:
             vec = vec / norm
         return vec.tolist()
 
 # Singleton default extractor instance
-default_extractor = SyntheticEmbeddingExtractor()
+# Can be swapped at runtime or via EMBEDDING_BACKEND env var
+_backend = os.getenv("EMBEDDING_BACKEND", "synthetic").lower()
+if _backend == "insightface":
+    try:
+        from .insightface_extractor import InsightFaceExtractor
+        default_extractor = InsightFaceExtractor()
+    except Exception as e:
+        print(f"Warning: InsightFace backend failed to load ({e}), falling back to synthetic")
+        default_extractor = SyntheticEmbeddingExtractor()
+else:
+    default_extractor = SyntheticEmbeddingExtractor()
 
 # --- Signal Computation Helpers ---
 

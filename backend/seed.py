@@ -5,15 +5,16 @@ import numpy as np
 from sqlalchemy.orm import Session
 from backend.app.database import engine, Base, SessionLocal
 from backend.app.models import Case, MatchLink, Feedback, AuditLog
+from backend.app.services.matching import EMBEDDING_DIM
 
 # Pluggable deterministic synthetic embedding generator
 def generate_synthetic_embedding(seed_str: str, noise_level: float = 0.0) -> list[float]:
     # Hash seed_str to create a base seed integer
     seed_val = int(abs(hash(seed_str))) % (2**32)
     rng = np.random.RandomState(seed_val)
-    vec = rng.randn(128)
+    vec = rng.randn(EMBEDDING_DIM)
     if noise_level > 0:
-        noise = np.random.randn(128) * noise_level
+        noise = np.random.randn(EMBEDDING_DIM) * noise_level
         vec = vec + noise
     norm = np.linalg.norm(vec)
     if norm > 0:

@@ -1,4 +1,5 @@
 import pytest
+import datetime
 from sqlalchemy.orm import Session
 from backend.app.database import SessionLocal, Base, engine
 from backend.app.models import Case
@@ -68,6 +69,31 @@ def test_planted_matches_rank_top_5(seeded_db: Session):
 
     # Assert that precision@5 is >= 90% (all or nearly all planted matches rank in top 5)
     assert precision_at_5 >= 0.90, f"Precision@5 too low: {precision_at_5}"
+
+def test_no_face_detected_skips_signal():
+    """Test that None embeddings don't crash matching and face signal is skipped."""
+    c1 = {
+        "id": 1, "name": "Alice", "devanagari_name": None,
+        "age": 25, "sex": "FEMALE", "height_cm": 160.0,
+        "marks": "Scar", "clothing": "Red dress",
+        "latitude": 18.5, "longitude": 73.8,
+        "last_seen_found_time": datetime.datetime.utcnow(),
+        "phone_numbers": [], "photo_embedding": None,  # No face
+    }
+    c2 = {
+        "id": 2, "name": "Alice Similar", "devanagari_name": None,
+        "age": 25, "sex": "FEMALE", "height_cm": 161.0,
+        "marks": "Scar", "clothing": "Red dress",
+        "latitude": 18.5, "longitude": 73.8,
+        "last_seen_found_time": datetime.datetime.utcnow(),
+        "phone_numbers": [], "photo_embedding": None,  # No face
+    }
+    
+    result = evaluate_match_score(c1, c2)
+    assert result["total_score"] >= 0.0
+    assert result["total_score"] <= 1.0
+    assert result["breakdown"]["face_score"] == 0.5  # Neutral fallback
+    print(f"No-face test passed. Score: {result['total_score']}")
 
 def test_transliteration_and_fuzzy():
     from backend.app.services.transliteration import devanagari_to_latin, compute_phonetic_fuzzy_similarity
