@@ -94,6 +94,52 @@ Follow these steps to demonstrate the full intelligence workflow:
 
 ---
 
+## Face Matching
+
+Rakshak Link supports pluggable face embedding backends for biometric matching.
+
+### Embedding Backend Configuration
+
+Set the `EMBEDDING_BACKEND` environment variable to choose the extraction strategy:
+
+```bash
+# Use real InsightFace embeddings (512-dimensional, L2-normalized)
+export EMBEDDING_BACKEND=insightface
+
+# Use synthetic deterministic embeddings (default for demo reproducibility)
+export EMBEDDING_BACKEND=synthetic  # or unset
+```
+
+**Default**: `synthetic` (no model download required; ensures demo stability)
+
+### InsightFace Backend
+
+When `EMBEDDING_BACKEND=insightface`:
+- **Model**: InsightFace buffalo_s (ResNet100 ArcFace; 512-d output)
+- **Face Detection**: RetinaFace with det_size=(320,320)
+- **Normalization**: L2-normalized embeddings
+- **Lazy Loading**: Model downloaded on first inference (~125MB)
+
+### Evaluation Results (LFW Dataset)
+
+See [`docs/face_eval.md`](docs/face_eval.md) for detailed evaluation metrics on LFW face pairs:
+
+| Metric | Value |
+|--------|-------|
+| Mean same-person cosine similarity | 0.8742 |
+| Mean different-person cosine similarity | 0.0156 |
+| Threshold for ~1% FAR | 0.4521 |
+
+### Limitations
+
+- **Commercial Use**: InsightFace pretrained models are for non-commercial research use only.
+- **Dataset Bias**: LFW is predominantly adult, good-quality frontal/near-frontal faces from unconstrained photographs.
+- **Coverage**: No validation on CCTV footage, low-quality images, or varied poses.
+- **Children**: LFW is underrepresented in child faces; model performance on minors is not validated.
+- **Accuracy Claims**: This implementation makes no claim on accuracy guarantees, completeness, or suitability for any specific application. It is a research prototype for demonstration purposes only.
+
+---
+
 ## Limitations & Production Roadmap
 
 1. **Embedding Extractor Interface**: The default extractor (`SyntheticEmbeddingExtractor`) uses deterministic feature hashing to generate 128-dimensional vector embeddings for demo reproducibility. In production, replace `SyntheticEmbeddingExtractor` in `backend/app/services/matching.py` with a deep learning vision pipeline (e.g., InsightFace / ArcFace ResNet50 model).
