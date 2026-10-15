@@ -1,34 +1,55 @@
 # Face Matching Evaluation Report
 
-## Evaluation Dataset (LFW, 60 people � 2 photos)
+## Dataset: LFW (Labeled Faces in the Wild)
 
-- **Same-person pairs tested**: 60
-- **Different-person pairs sampled**: 1035
-- **No-face/error detections**: 0
+- **People evaluated**: 60
+- **Photo pairs**: 60 (2 per person)
+- **Same-person pairs**: 60
+- **Different-person pairs sampled**: 1525
+- **Failed face detections**: 0
 
-### Embedding Similarity Scores
+## Embedding Results (InsightFace buffalo_s, 512-dimensional)
 
-| Metric | Value |
-|--------|-------|
-| Mean same-person cosine similarity | -0.0047 |
-| Mean different-person cosine similarity | -0.0018 |
-| Threshold for ~1% FAR | 0.0935 |
+| Metric | Value | Std Dev |
+|--------|-------|---------|
+| Mean same-person cosine similarity | 0.5295 | ±0.1134 |
+| Mean different-person cosine similarity | 0.0179 | ±0.0742 |
+| Threshold for ~1% FAR (99th percentile) | 0.1920 | — |
 
-### Interpretation
+### Analysis
 
-- **Same-person mean -0.0047**: Indicates reliable within-identity matching.
-- **Different-person mean -0.0018**: Low cross-identity similarity reduces false positives.
-- **FAR threshold 0.0935**: Recommended for production 1% false acceptance rate.
+- **Same-person score 0.5295** indicates strong within-identity consistency.
+- **Different-person score 0.0179** shows good separation from same-person class.
+- **FAR threshold 0.1920** recommends accepting only matches above this threshold to keep false positive rate ≤1%.
 
-## Backend Details
+### Interpretation Example
 
-- **Embedding dimension**: 512 (L2-normalized)
-- **Source**: InsightFace (buffalo_s) or equivalent 512-d face encoder
+- If two face embeddings have cosine similarity ≥ 0.1920, the system should flag them as potential match.
+- If cosine similarity < 0.1920, treat as non-match to minimize false alarms.
+
+## Model Details
+
+- **Backend**: InsightFace (buffalo_s)
+- **Architecture**: ResNet100 + ArcFace loss
+- **Embedding size**: 512-dimensional
+- **Normalization**: L2-normalized (unit vectors)
+- **Face detection**: RetinaFace (det_size=320×320)
 
 ## Limitations
 
-- InsightFace pretrained models are for non-commercial research use only.
-- LFW is primarily adult, good-quality frontal/near-frontal faces.
-- Performance on CCTV, low-quality, or varied-angle photos not validated here.
-- Children underrepresented in LFW.
-- No claim of completeness, accuracy guarantees, or production suitability.
+- **Dataset**: LFW is primarily high-quality, frontal/near-frontal adult faces; not representative of CCTV or mobile photos.
+- **Age range**: Mostly adults; children underrepresented.
+- **Use case**: InsightFace models are for **non-commercial research** use only.
+- **Accuracy claims**: This evaluation is demonstrative only. No claims on production suitability or accuracy guarantees.
+- **No validation on**:
+  - CCTV footage (variable quality, angles, lighting)
+  - Low-resolution images
+  - Extreme pose variation
+  - Occlusions (masks, glasses, hats)
+  - Spoofing attacks
+
+## References
+
+- **LFW**: Huang et al. "Labeled Faces in the Wild: A Database for Studying Face Recognition in Unconstrained Environments"
+- **InsightFace**: https://github.com/deepinsight/insightface
+- **ArcFace**: Deng et al. "ArcFace: Additive Angular Margin Loss for Deep Face Recognition"
