@@ -130,16 +130,18 @@ See [`docs/face_eval.md`](docs/face_eval.md) for detailed evaluation metrics on 
 | Mean different-person cosine similarity | 0.0179 | ±0.0742 |
 | Threshold for ~1% FAR | 0.1920 | — |
 
-**LFW Identification Benchmark** (see [`docs/lfw_identification.md`](docs/lfw_identification.md)):
-- Rank-1 accuracy: 100% (60/60 correct top match)
-- Rank-5 accuracy: 100% (60/60 correct in top-5)
-
 **Signal Ablation on Planted Matches** (see [`docs/ablation.md`](docs/ablation.md)):
 - Face-only: 100% @ Rank-1, 100% @ Rank-5
 - Name-only: 100% @ Rank-1, 100% @ Rank-5
 - All signals fused: 100% @ Rank-1, 100% @ Rank-5
 
 (Note: Planted pairs share same person, phone numbers, and similar attributes.)
+
+**Hard Ablation on Corrupted LFW** (see [`docs/hard_ablation.md`](docs/hard_ablation.md)):
+- Face-only: 31.7% @ Rank-1, 100.0% @ Rank-5 (degraded to 40px + blur)
+- Fused: 91.7% @ Rank-1, 100.0% @ Rank-5 (name corruption, photo degradation, metadata jitter)
+
+(Synthetic corruption: 30% name misspell/missing, 30% photo downscale+blur, 30% age±5yr, location/time jitter; gallery=180 distractors; fused signal recovers where face-only fails)
 
 ### Interpretation
 
