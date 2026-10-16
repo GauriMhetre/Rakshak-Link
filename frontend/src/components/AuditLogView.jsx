@@ -52,30 +52,46 @@ export default function AuditLogView({ role, district }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-mono text-ashgray">
-              {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-darkblue/40/60 transition-colors">
-                  <td className="py-2.5 px-3 whitespace-nowrap text-ashgray/70">
-                    {new Date(log.timestamp).toLocaleString()}
-                  </td>
-                  <td className="py-2.5 px-3 whitespace-nowrap">
-                    <span className="px-2 py-0.5 bg-darkblue/40 text-earth border border-earth/20 rounded font-semibold text-[11px]">
-                      {log.user_role}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 whitespace-nowrap font-bold text-ashgray">
-                    📍 {log.user_district}
-                  </td>
-                  <td className="py-2.5 px-3 whitespace-nowrap font-bold text-emerald-400">
-                    {log.action}
-                  </td>
-                  <td className="py-2.5 px-3 whitespace-nowrap text-ashgray/70">
-                    {log.target_id || '-'}
-                  </td>
-                  <td className="py-2.5 px-3 text-ashgray/70 max-w-xs truncate">
-                    {JSON.stringify(log.details || {})}
-                  </td>
-                </tr>
-              ))}
+              {logs.map((log) => {
+                // Format details as a readable summary
+                const detailsSummary = (() => {
+                  if (!log.details || typeof log.details !== 'object') return '-';
+                  const keys = Object.keys(log.details);
+                  if (keys.length === 0) return '-';
+                  // Show first key-value or a count
+                  const firstKey = keys[0];
+                  const firstVal = log.details[firstKey];
+                  if (typeof firstVal === 'string' && firstVal.length > 40) {
+                    return `${firstKey}: ${firstVal.substring(0, 40)}...`;
+                  }
+                  return `${firstKey}: ${JSON.stringify(firstVal)}`;
+                })();
+
+                return (
+                  <tr key={log.id} className="hover:bg-darkblue/40/60 transition-colors">
+                    <td className="py-2.5 px-3 whitespace-nowrap text-ashgray/70">
+                      {new Date(log.timestamp).toLocaleString()}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      <span className="px-2 py-0.5 bg-darkblue/40 text-earth border border-earth/20 rounded font-semibold text-[11px]">
+                        {log.user_role}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap font-bold text-ashgray">
+                      📍 {log.user_district}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap font-bold text-emerald-400">
+                      {log.action}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap text-ashgray/70">
+                      {log.target_id || '-'}
+                    </td>
+                    <td className="py-2.5 px-3 text-ashgray/70 max-w-xs truncate text-[10px]" title={JSON.stringify(log.details || {})}>
+                      {detailsSummary}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
