@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 import networkx as nx
 from sqlalchemy.orm import Session
-from backend.app.models import Case, MatchLink
+from app.models import Case, MatchLink
 
 def build_trafficking_graph(db: Session) -> Dict[str, Any]:
     G = nx.Graph()

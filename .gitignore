@@ -16,3 +16,6 @@ build/
 
 # Environment
 .env
+
+# Face data
+data/faces/

@@ -26,7 +26,7 @@ class Case(Base):
     district = Column(String, index=True)  # Pune, Mumbai Suburban, Thane, Nagpur
     phone_numbers = Column(JSON, default=list)
     photo_url = Column(String, nullable=True)
-    photo_embedding = Column(JSON, nullable=True)  # List of 128 floats
+    photo_embedding = Column(JSON, nullable=True)  # List of 512 floats (InsightFace/synthetic)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     created_by_role = Column(String, default="Station Officer")
     created_by_district = Column(String)
@@ -69,3 +69,5 @@ class AuditLog(Base):
     action = Column(String, index=True)
     target_id = Column(String, nullable=True)
     details = Column(JSON, nullable=True)
+    previous_hash = Column(String, nullable=True)  # Hash of previous audit log entry
+    entry_hash = Column(String, nullable=True)  # SHA-256 hash of this entry

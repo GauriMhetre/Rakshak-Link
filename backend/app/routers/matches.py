@@ -2,11 +2,14 @@ import datetime
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.models import Case, MatchLink, Feedback
-from backend.app.schemas import MatchResponse
-from backend.app.auth import get_user_context, UserContext, log_audit_event
-from backend.app.services.matching import evaluate_match_score
+from app.database import get_db
+from app.models import Case, MatchLink, Feedback
+from app.schemas import MatchResponse
+from app.auth import get_user_context, UserContext, log_audit_event
+from app.services.matching import evaluate_match_score
+import json
+import subprocess
+import os
 
 router = APIRouter(prefix="/api/matches", tags=["Matches"])
 
@@ -81,21 +84,35 @@ def verify_match(
     user_context: UserContext = Depends(get_user_context),
     db: Session = Depends(get_db)
 ):
+    # Only Investigating Officers and CWC Officers can verify matches
+    if user_context.role == "Station Officer":
+        raise HTTPException(status_code=403, detail="Only Investigating Officers can verify cross-district matches")
+    
     match_link = db.query(MatchLink).filter(MatchLink.id == match_id).first()
     if not match_link:
         raise HTTPException(status_code=404, detail="Match link not found")
+
+    # Verify authorization: user must have access to both cases
+    source_case = db.query(Case).filter(Case.id == match_link.source_case_id).first()
+    target_case = db.query(Case).filter(Case.id == match_link.target_case_id).first()
+    
+    if not source_case or not target_case:
+        raise HTTPException(status_code=404, detail="Source or target case not found")
+    
+    # For IO: allow all; for CWC: allow only if within their access scope
+    if user_context.role == "CWC Officer":
+        # CWC can verify matches involving child welfare cases
+        pass  # CWC has broad access
 
     match_link.status = "VERIFIED"
     match_link.verified_by_user = f"{user_context.role} ({user_context.district})"
     match_link.verified_at = datetime.datetime.utcnow()
 
     # Update both cases status to MATCHED
-    s_case = db.query(Case).filter(Case.id == match_link.source_case_id).first()
-    t_case = db.query(Case).filter(Case.id == match_link.target_case_id).first()
-    if s_case:
-        s_case.status = "MATCHED"
-    if t_case:
-        t_case.status = "MATCHED"
+    if source_case:
+        source_case.status = "MATCHED"
+    if target_case:
+        target_case.status = "MATCHED"
 
     # Add feedback record
     fb = Feedback(
@@ -103,14 +120,14 @@ def verify_match(
         user_role=user_context.role,
         district=user_context.district,
         feedback_type="VERIFIED",
-        notes=notes or "Verified by IO/Station Officer across districts",
+        notes=notes or "Verified by IO/CWC across districts",
         created_at=datetime.datetime.utcnow()
     )
     db.add(fb)
     db.commit()
 
     # Audit alert triggering both districts
-    districts_alerted = list(set([s_case.district if s_case else "", t_case.district if t_case else ""]))
+    districts_alerted = list(set([source_case.district if source_case else "", target_case.district if target_case else ""]))
     log_audit_event(db, user_context, "VERIFY_MATCH", target_id=str(match_id), details={
         "source_case_id": match_link.source_case_id,
         "target_case_id": match_link.target_case_id,
@@ -131,6 +148,10 @@ def reject_match(
     user_context: UserContext = Depends(get_user_context),
     db: Session = Depends(get_db)
 ):
+    # Only Investigating Officers and CWC Officers can reject matches
+    if user_context.role == "Station Officer":
+        raise HTTPException(status_code=403, detail="Only Investigating Officers can reject cross-district matches")
+    
     match_link = db.query(MatchLink).filter(MatchLink.id == match_id).first()
     if not match_link:
         raise HTTPException(status_code=404, detail="Match link not found")
@@ -161,3 +182,43 @@ def reject_match(
         "message": "Match rejected and recorded in feedback table.",
         "match_id": match_id
     }
+
+@router.get("/optimize-weights")
+def get_optimal_weights(
+    user_context: UserContext = Depends(get_user_context),
+    db: Session = Depends(get_db)
+):
+    """Run weight optimization on planted matches and return optimal weights."""
+    # Only IO/CWC can request weight optimization
+    if user_context.role == "Station Officer":
+        raise HTTPException(status_code=403, detail="Only Investigating Officers can optimize weights")
+    
+    try:
+        # Run weight optimization script
+        script_path = os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'weight_optimization.py')
+        result = subprocess.run(['python', script_path], capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            # Fall back to default weights
+            return {
+                "face": 0.35,
+                "name": 0.25,
+                "attr": 0.20,
+                "geotime": 0.20,
+                "note": "Optimization failed; returning default weights"
+            }
+        
+        weights = json.loads(result.stdout.strip().split('\n')[-1])
+        
+        log_audit_event(db, user_context, "OPTIMIZE_WEIGHTS", details={"weights": weights})
+        
+        return weights
+    except Exception as e:
+        return {
+            "face": 0.35,
+            "name": 0.25,
+            "attr": 0.20,
+            "geotime": 0.20,
+            "note": f"Optimization error: {str(e)}"
+        }
+

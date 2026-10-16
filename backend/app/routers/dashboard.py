@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.models import Case, MatchLink, AuditLog
-from backend.app.auth import get_user_context, UserContext, log_audit_event
-from backend.app.services.graph_service import build_trafficking_graph
-from backend.app.services.matching import evaluate_match_score
-from backend.seed import PLANTED_MATCHES_DATA
+from app.database import get_db
+from app.models import Case, MatchLink, AuditLog
+from app.auth import get_user_context, UserContext, log_audit_event, _compute_entry_hash
+from app.services.graph_service import build_trafficking_graph
+from app.services.matching import evaluate_match_score
+from seed import PLANTED_MATCHES_DATA
+import json
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -111,4 +112,59 @@ def get_dashboard_metrics(
         "district_stats": district_stats,
         "clusters": graph_data["flagged_clusters"],
         "recent_activity": audit_stream,
+    }
+
+@router.get("/audit/verify")
+def verify_audit_chain(
+    user_context: UserContext = Depends(get_user_context),
+    db: Session = Depends(get_db)
+):
+    """Verify the integrity of the audit log hash chain with gap/deletion detection."""
+    audit_entries = db.query(AuditLog).order_by(AuditLog.id).all()
+    
+    if not audit_entries:
+        return {"status": "OK", "entries_verified": 0, "tampering_detected": False}
+    
+    # Verify hash chain and detect gaps/deletions
+    previous_hash = "0" * 64  # Genesis
+    tampering_detected = False
+    tampering_details = []
+    last_id = None
+    
+    for entry in audit_entries:
+        # Check for ID gaps (indicates deletion)
+        if last_id is not None and entry.id != last_id + 1:
+            tampering_detected = True
+            gap_count = entry.id - last_id - 1
+            tampering_details.append(f"Gap detected: ID {last_id} → {entry.id} (missing {gap_count} entries)")
+        
+        # Recompute expected hash
+        entry_data = {
+            "timestamp": entry.timestamp.isoformat(),
+            "user_role": entry.user_role,
+            "user_district": entry.user_district,
+            "action": entry.action,
+            "target_id": entry.target_id,
+            "details": entry.details,
+            "previous_hash": entry.previous_hash,
+        }
+        expected_hash = _compute_entry_hash(entry_data)
+        
+        # Check if chain link is valid
+        if entry.previous_hash != previous_hash:
+            tampering_detected = True
+            tampering_details.append(f"Entry {entry.id}: previous_hash mismatch")
+        
+        if entry.entry_hash != expected_hash:
+            tampering_detected = True
+            tampering_details.append(f"Entry {entry.id}: entry_hash mismatch (tampering or corruption)")
+        
+        previous_hash = entry.entry_hash
+        last_id = entry.id
+    
+    return {
+        "status": "TAMPERED" if tampering_detected else "OK",
+        "entries_verified": len(audit_entries),
+        "tampering_detected": tampering_detected,
+        "tampering_details": tampering_details if tampering_detected else [],
     }

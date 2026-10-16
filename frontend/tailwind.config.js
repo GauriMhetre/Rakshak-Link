@@ -7,12 +7,15 @@ export default {
   theme: {
     extend: {
       colors: {
+        ashgray: '#BCD4CC',
+        darkblue: '#002F45',
+        earth: '#E3A750',
         police: {
-          900: '#0b192c',
-          800: '#1e3e62',
+          900: '#002F45',
+          800: '#1a4d5c',
           700: '#000000',
-          500: '#ff6500',
-          100: '#e2e8f0',
+          500: '#E3A750',
+          100: '#BCD4CC',
         }
       }
     },
