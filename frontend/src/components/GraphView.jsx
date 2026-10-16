@@ -156,14 +156,14 @@ export default function GraphView({ role, district }) {
             <Share2 className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Interstate Trafficking Network Graph</h2>
-            <p className="text-xs text-slate-400">Interactive Cytoscape network mapping shared phones, locations, and verified cross-district links.</p>
+            <h2 className="text-lg font-bold text-ashgray">Interstate Trafficking Network Graph</h2>
+            <p className="text-xs text-ashgray/70">Interactive Cytoscape network mapping shared phones, locations, and verified cross-district links.</p>
           </div>
         </div>
 
         <button
           onClick={loadGraph}
-          className="px-3 py-1.5 bg-slate-950 border border-slate-800 hover:border-amber-500 text-slate-300 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5"
+          className="px-3 py-1.5 bg-darkblue/40 border border-earth/20 hover:border-amber-500 text-ashgray text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           <span>Refresh Network Layout</span>
@@ -173,20 +173,20 @@ export default function GraphView({ role, district }) {
       {/* Flagged Trafficking Clusters Banner */}
       {graphData?.flagged_clusters?.length > 0 && (
         <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-xl space-y-2">
-          <div className="flex items-center space-x-2 text-amber-400 font-extrabold text-sm">
-            <ShieldAlert className="w-5 h-5 text-amber-500" />
+          <div className="flex items-center space-x-2 text-earth font-extrabold text-sm">
+            <ShieldAlert className="w-5 h-5 text-earth" />
             <span>CRITICAL TRAFFICKING SYNDICATE ALERTS ({graphData.flagged_clusters.length} FLAGGED CLUSTERS)</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
             {graphData.flagged_clusters.map((c) => (
-              <div key={c.cluster_id} className="p-3 bg-slate-950/80 rounded-lg border border-amber-500/30 text-xs space-y-1">
+              <div key={c.cluster_id} className="p-3 bg-darkblue/40/80 rounded-lg border border-amber-500/30 text-xs space-y-1">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-amber-400">{c.cluster_id} • Shared {c.shared_node_type.toUpperCase()}</span>
+                  <span className="font-bold text-earth">{c.cluster_id} • Shared {c.shared_node_type.toUpperCase()}</span>
                   <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 font-bold rounded text-[10px]">{c.risk_level} RISK</span>
                 </div>
-                <p className="font-mono text-slate-200">Value: {c.shared_value}</p>
-                <p className="text-slate-400">Linked to <strong className="text-white">{c.case_count} cases</strong> across districts: <span className="text-amber-300">{c.districts.join(', ')}</span></p>
+                <p className="font-mono text-ashgray">Value: {c.shared_value}</p>
+                <p className="text-ashgray/70">Linked to <strong className="text-ashgray">{c.case_count} cases</strong> across districts: <span className="text-amber-300">{c.districts.join(', ')}</span></p>
               </div>
             ))}
           </div>
@@ -196,11 +196,11 @@ export default function GraphView({ role, district }) {
       {/* Main Graph Canvas & Details Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 glass-card p-4 relative min-h-[500px]">
-          <div className="absolute top-4 left-4 z-10 flex space-x-2 bg-slate-950/90 p-2 rounded-lg border border-slate-800 text-[11px]">
-            <span className="flex items-center space-x-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> <span className="text-slate-300">Missing</span></span>
-            <span className="flex items-center space-x-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> <span className="text-slate-300">Found</span></span>
-            <span className="flex items-center space-x-1"><span className="w-2.5 h-2.5 bg-amber-500 rotate-45" /> <span className="text-slate-300">Phone</span></span>
-            <span className="flex items-center space-x-1"><span className="w-2.5 h-2.5 bg-purple-500" /> <span className="text-slate-300">Location</span></span>
+          <div className="absolute top-4 left-4 z-10 flex space-x-2 bg-darkblue/40/90 p-2 rounded-lg border border-earth/20 text-[11px]">
+            <span className="flex items-center space-x-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> <span className="text-ashgray">Missing</span></span>
+            <span className="flex items-center space-x-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> <span className="text-ashgray">Found</span></span>
+            <span className="flex items-center space-x-1"><span className="w-2.5 h-2.5 bg-amber-500 rotate-45" /> <span className="text-ashgray">Phone</span></span>
+            <span className="flex items-center space-x-1"><span className="w-2.5 h-2.5 bg-purple-500" /> <span className="text-ashgray">Location</span></span>
           </div>
 
           <div ref={containerRef} className="w-full h-[520px] rounded-lg" />
@@ -208,38 +208,38 @@ export default function GraphView({ role, district }) {
 
         {/* Inspection Sidebar */}
         <div className="lg:col-span-4 glass-card p-5 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center space-x-2 pb-3 border-b border-slate-800">
-            <Info className="w-4 h-4 text-amber-400" />
+          <h3 className="text-sm font-bold text-ashgray flex items-center space-x-2 pb-3 border-b border-earth/20">
+            <Info className="w-4 h-4 text-earth" />
             <span>Graph Element Inspector</span>
           </h3>
 
           {selectedElement ? (
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
-                <span className="text-[10px] text-amber-400 uppercase font-bold block">{selectedElement.type || 'Connection Edge'}</span>
-                <p className="text-sm font-bold text-white">{selectedElement.label}</p>
+              <div className="p-3 bg-darkblue/40 rounded-lg border border-earth/20">
+                <span className="text-[10px] text-earth uppercase font-bold block">{selectedElement.type || 'Connection Edge'}</span>
+                <p className="text-sm font-bold text-ashgray">{selectedElement.label}</p>
               </div>
 
               {selectedElement.district && (
-                <div className="flex justify-between text-slate-300 py-1 border-b border-slate-800">
+                <div className="flex justify-between text-ashgray py-1 border-b border-earth/20">
                   <span>District:</span>
-                  <span className="font-bold text-amber-400">{selectedElement.district}</span>
+                  <span className="font-bold text-earth">{selectedElement.district}</span>
                 </div>
               )}
 
               {selectedElement.age && (
-                <div className="flex justify-between text-slate-300 py-1 border-b border-slate-800">
+                <div className="flex justify-between text-ashgray py-1 border-b border-earth/20">
                   <span>Age / Sex:</span>
-                  <span className="font-bold text-white">{selectedElement.age} yrs • {selectedElement.sex}</span>
+                  <span className="font-bold text-ashgray">{selectedElement.age} yrs • {selectedElement.sex}</span>
                 </div>
               )}
 
               {selectedElement.phone_numbers?.length > 0 && (
                 <div className="space-y-1">
-                  <span className="text-slate-400 text-[11px] block">Associated Phone Numbers:</span>
+                  <span className="text-ashgray/70 text-[11px] block">Associated Phone Numbers:</span>
                   <div className="space-y-1">
                     {selectedElement.phone_numbers.map(p => (
-                      <div key={p} className="p-1.5 bg-slate-950 rounded text-amber-300 font-mono text-[11px] border border-slate-800">
+                      <div key={p} className="p-1.5 bg-darkblue/40 rounded text-amber-300 font-mono text-[11px] border border-earth/20">
                         📞 {p}
                       </div>
                     ))}
@@ -248,7 +248,7 @@ export default function GraphView({ role, district }) {
               )}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-400 text-xs">
+            <div className="text-center py-12 text-ashgray/70 text-xs">
               Click any node or edge on the graph to inspect detailed attributes and connected cases.
             </div>
           )}

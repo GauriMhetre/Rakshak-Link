@@ -38,7 +38,7 @@ export default function Dashboard({ role, district, setActiveTab, onSelectCase }
           value={m.total_open_cases}
           subtitle={`Missing: ${m.open_missing} • Found: ${m.open_found}`}
           icon={Users}
-          color="from-blue-500 to-indigo-600"
+          color="from-earth to-yellow-600"
           onClick={() => setActiveTab('cases')}
         />
 
@@ -47,7 +47,7 @@ export default function Dashboard({ role, district, setActiveTab, onSelectCase }
           value={m.probable_matches}
           subtitle="Pending IO Verification"
           icon={GitCompare}
-          color="from-amber-500 to-orange-600"
+          color="from-earth to-orange-500"
           onClick={() => setActiveTab('matches')}
         />
 
@@ -56,7 +56,7 @@ export default function Dashboard({ role, district, setActiveTab, onSelectCase }
           value={m.verified_links}
           subtitle="Joint District Alerts Sent"
           icon={CheckCircle2}
-          color="from-emerald-500 to-teal-600"
+          color="from-ashgray to-slate-300"
         />
 
         <MetricCard
@@ -64,7 +64,7 @@ export default function Dashboard({ role, district, setActiveTab, onSelectCase }
           value={m.flagged_clusters}
           subtitle="Trafficking Syndicates"
           icon={ShieldAlert}
-          color="from-rose-500 to-pink-600"
+          color="from-earth to-red-600"
           onClick={() => setActiveTab('graph')}
         />
 
@@ -73,32 +73,32 @@ export default function Dashboard({ role, district, setActiveTab, onSelectCase }
           value={m.precision_at_5_percentage}
           subtitle="Evaluated on Seed Set"
           icon={Target}
-          color="from-purple-500 to-violet-600"
+          color="from-darkblue to-teal-700"
         />
       </div>
 
       {/* District Breakdown & Trafficking Syndicate Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* District Activity Breakdown */}
-        <div className="lg:col-span-6 glass-card p-5 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="lg:col-span-6 glass-card p-5 space-y-4 bg-darkblue/20 border border-ashgray/10">
+          <h3 className="text-sm font-bold text-ashgray flex items-center justify-between border-b border-earth/20 pb-3">
             <span className="flex items-center space-x-2">
-              <MapPin className="w-4 h-4 text-amber-400" />
+              <MapPin className="w-4 h-4 text-earth" />
               <span>District Intelligence Load</span>
             </span>
-            <span className="text-xs text-slate-400">4 Active Districts</span>
+            <span className="text-xs text-ashgray/70">4 Active Districts</span>
           </h3>
 
           <div className="space-y-3">
             {Object.entries(districtStats).map(([distName, stats]) => (
-              <div key={distName} className="p-3 bg-slate-950 rounded-lg border border-slate-800 space-y-1.5">
+              <div key={distName} className="p-3 bg-darkblue/40 rounded-lg border border-earth/15 space-y-1.5">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-white">📍 {distName}</span>
-                  <span className="font-mono font-bold text-amber-400">{stats.total} total cases</span>
+                  <span className="font-bold text-ashgray">📍 {distName}</span>
+                  <span className="font-mono font-bold text-earth">{stats.total} total cases</span>
                 </div>
-                <div className="flex text-[11px] text-slate-400 space-x-3">
-                  <span>Missing: <strong className="text-rose-400">{stats.missing}</strong></span>
-                  <span>Found/Rescued: <strong className="text-emerald-400">{stats.found}</strong></span>
+                <div className="flex text-[11px] text-ashgray/70 space-x-3">
+                  <span>Missing: <strong className="text-earth">{stats.missing}</strong></span>
+                  <span>Found/Rescued: <strong className="text-ashgray">{stats.found}</strong></span>
                 </div>
               </div>
             ))}
@@ -106,13 +106,13 @@ export default function Dashboard({ role, district, setActiveTab, onSelectCase }
         </div>
 
         {/* Audit Event Activity Stream */}
-        <div className="lg:col-span-6 glass-card p-5 space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="lg:col-span-6 glass-card p-5 space-y-4 bg-darkblue/20 border border-ashgray/10">
+          <h3 className="text-sm font-bold text-ashgray flex items-center justify-between border-b border-earth/20 pb-3">
             <span className="flex items-center space-x-2">
-              <Activity className="w-4 h-4 text-amber-400" />
+              <Activity className="w-4 h-4 text-earth" />
               <span>Real-Time Audit Stream</span>
             </span>
-            <button onClick={() => setActiveTab('audit')} className="text-xs text-amber-400 hover:underline flex items-center">
+            <button onClick={() => setActiveTab('audit')} className="text-xs text-earth hover:underline flex items-center">
               <span>View full log</span>
               <ArrowUpRight className="w-3 h-3 ml-0.5" />
             </button>
@@ -120,15 +120,15 @@ export default function Dashboard({ role, district, setActiveTab, onSelectCase }
 
           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
             {(data?.recent_activity || []).map((act) => (
-              <div key={act.id} className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/80 text-xs flex justify-between items-center">
+              <div key={act.id} className="p-2.5 bg-darkblue/40 rounded-lg border border-earth/15 text-xs flex justify-between items-center">
                 <div className="space-y-0.5">
                   <div className="flex items-center space-x-1.5">
-                    <span className="font-bold text-slate-200">{act.action}</span>
-                    <span className="text-[10px] bg-slate-800 text-amber-400 px-1.5 py-0.2 rounded font-mono">{act.role}</span>
+                    <span className="font-bold text-ashgray">{act.action}</span>
+                    <span className="text-[10px] bg-earth/20 text-earth px-1.5 py-0.2 rounded font-mono border border-earth/30">{act.role}</span>
                   </div>
-                  <p className="text-[11px] text-slate-400">{act.district} • Target ID: {act.target_id || 'System'}</p>
+                  <p className="text-[11px] text-ashgray/70">{act.district} • Target ID: {act.target_id || 'System'}</p>
                 </div>
-                <span className="text-[10px] text-slate-500 font-mono">
+                <span className="text-[10px] text-ashgray/50 font-mono">
                   {act.timestamp ? new Date(act.timestamp).toLocaleTimeString() : ''}
                 </span>
               </div>
@@ -144,22 +144,22 @@ function MetricCard({ title, value, subtitle, icon: Icon, color, onClick }) {
   return (
     <div
       onClick={onClick}
-      className={`glass-card glass-card-hover p-4 flex flex-col justify-between space-y-2 relative overflow-hidden group ${
+      className={`glass-card glass-card-hover p-4 flex flex-col justify-between space-y-2 relative overflow-hidden group bg-darkblue/30 border border-ashgray/10 ${
         onClick ? 'cursor-pointer' : ''
       }`}
     >
-      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${color} opacity-10 blur-xl rounded-full group-hover:opacity-20 transition-all`} />
+      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${color} opacity-5 blur-xl rounded-full group-hover:opacity-15 transition-all`} />
 
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">{title}</span>
+        <span className="text-[10px] font-bold tracking-wider text-ashgray/80 uppercase">{title}</span>
         <div className={`p-2 rounded-lg bg-gradient-to-br ${color} text-white shadow-md`}>
           <Icon className="w-4 h-4" />
         </div>
       </div>
 
       <div>
-        <p className="text-2xl font-extrabold text-white font-mono tracking-tight">{value}</p>
-        <p className="text-[11px] text-slate-400 font-medium mt-0.5">{subtitle}</p>
+        <p className="text-2xl font-extrabold text-ashgray font-mono tracking-tight">{value}</p>
+        <p className="text-[11px] text-ashgray/70 font-medium mt-0.5">{subtitle}</p>
       </div>
     </div>
   );
