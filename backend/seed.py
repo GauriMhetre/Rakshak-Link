@@ -4,9 +4,9 @@ import datetime
 import numpy as np
 from pathlib import Path
 from sqlalchemy.orm import Session
-from backend.app.database import engine, Base, SessionLocal
-from backend.app.models import Case, MatchLink, Feedback, AuditLog
-from backend.app.services.matching import EMBEDDING_DIM
+from app.database import engine, Base, SessionLocal
+from app.models import Case, MatchLink, Feedback, AuditLog
+from app.services.matching import EMBEDDING_DIM
 
 # Pluggable deterministic synthetic embedding generator
 def generate_synthetic_embedding(seed_str: str, noise_level: float = 0.0) -> list[float]:
@@ -25,7 +25,7 @@ def generate_synthetic_embedding(seed_str: str, noise_level: float = 0.0) -> lis
 def load_real_face_embedding(photo_path: str) -> list[float]:
     """Load real face embedding from InsightFace."""
     try:
-        from backend.app.services.insightface_extractor import InsightFaceExtractor
+        from app.services.insightface_extractor import InsightFaceExtractor
         extractor = InsightFaceExtractor()
         emb = extractor.extract_embedding(photo_path)
         if emb is None:

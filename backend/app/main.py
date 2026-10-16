@@ -2,8 +2,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from backend.app.database import Base, engine
-from backend.app.routers import cases, matches, graph, dashboard, audit
+from app.database import Base, engine
+from app.routers import cases, matches, graph, dashboard, audit
 
 # Ensure DB tables exist
 Base.metadata.create_all(bind=engine)

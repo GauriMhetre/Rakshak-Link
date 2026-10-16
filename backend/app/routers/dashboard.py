@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.models import Case, MatchLink, AuditLog
-from backend.app.auth import get_user_context, UserContext, log_audit_event, _compute_entry_hash
-from backend.app.services.graph_service import build_trafficking_graph
-from backend.app.services.matching import evaluate_match_score
-from backend.seed import PLANTED_MATCHES_DATA
+from app.database import get_db
+from app.models import Case, MatchLink, AuditLog
+from app.auth import get_user_context, UserContext, log_audit_event, _compute_entry_hash
+from app.services.graph_service import build_trafficking_graph
+from app.services.matching import evaluate_match_score
+from seed import PLANTED_MATCHES_DATA
 import json
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])

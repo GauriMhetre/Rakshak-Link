@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.auth import get_user_context, UserContext, log_audit_event
-from backend.app.services.graph_service import build_trafficking_graph
+from app.database import get_db
+from app.auth import get_user_context, UserContext, log_audit_event
+from app.services.graph_service import build_trafficking_graph
 
 router = APIRouter(prefix="/api/graph", tags=["Graph"])
 

@@ -2,11 +2,11 @@ import datetime
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.models import Case, MatchLink, Feedback
-from backend.app.schemas import MatchResponse
-from backend.app.auth import get_user_context, UserContext, log_audit_event
-from backend.app.services.matching import evaluate_match_score
+from app.database import get_db
+from app.models import Case, MatchLink, Feedback
+from app.schemas import MatchResponse
+from app.auth import get_user_context, UserContext, log_audit_event
+from app.services.matching import evaluate_match_score
 
 router = APIRouter(prefix="/api/matches", tags=["Matches"])
 

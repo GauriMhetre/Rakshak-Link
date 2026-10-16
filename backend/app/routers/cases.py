@@ -2,11 +2,11 @@ import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.models import Case, MatchLink
-from backend.app.schemas import CaseCreate, CaseResponse
-from backend.app.auth import get_user_context, UserContext, log_audit_event
-from backend.app.services.matching import default_extractor, evaluate_match_score
+from app.database import get_db
+from app.models import Case, MatchLink
+from app.schemas import CaseCreate, CaseResponse
+from app.auth import get_user_context, UserContext, log_audit_event
+from app.services.matching import default_extractor, evaluate_match_score
 
 router = APIRouter(prefix="/api/cases", tags=["Cases"])
 
