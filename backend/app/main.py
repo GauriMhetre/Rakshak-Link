@@ -26,10 +26,14 @@ app.add_exception_handler(Exception, lambda request, exc: {"error": "Rate limit 
 # CORS configuration - restrict to frontend only
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Frontend dev servers
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://*.vercel.app",  # Vercel deployment
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-User-Role", "X-User-District"],
 )
 
 # Mount API routers
