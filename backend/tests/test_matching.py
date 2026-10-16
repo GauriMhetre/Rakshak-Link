@@ -1,10 +1,10 @@
 import pytest
 import datetime
 from sqlalchemy.orm import Session
-from backend.app.database import SessionLocal, Base, engine
-from backend.app.models import Case
-from backend.app.services.matching import evaluate_match_score
-from backend.seed import PLANTED_MATCHES_DATA, seed_db
+from app.database import SessionLocal, Base, engine
+from app.models import Case
+from app.services.matching import evaluate_match_score
+from seed import PLANTED_MATCHES_DATA, seed_db
 
 @pytest.fixture(scope="module")
 def seeded_db():

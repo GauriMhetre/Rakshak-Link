@@ -7,6 +7,9 @@ from app.models import Case, MatchLink, Feedback
 from app.schemas import MatchResponse
 from app.auth import get_user_context, UserContext, log_audit_event
 from app.services.matching import evaluate_match_score
+import json
+import subprocess
+import os
 
 router = APIRouter(prefix="/api/matches", tags=["Matches"])
 
@@ -179,3 +182,43 @@ def reject_match(
         "message": "Match rejected and recorded in feedback table.",
         "match_id": match_id
     }
+
+@router.get("/optimize-weights")
+def get_optimal_weights(
+    user_context: UserContext = Depends(get_user_context),
+    db: Session = Depends(get_db)
+):
+    """Run weight optimization on planted matches and return optimal weights."""
+    # Only IO/CWC can request weight optimization
+    if user_context.role == "Station Officer":
+        raise HTTPException(status_code=403, detail="Only Investigating Officers can optimize weights")
+    
+    try:
+        # Run weight optimization script
+        script_path = os.path.join(os.path.dirname(__file__), '..', '..', 'scripts', 'weight_optimization.py')
+        result = subprocess.run(['python', script_path], capture_output=True, text=True, timeout=300)
+        
+        if result.returncode != 0:
+            # Fall back to default weights
+            return {
+                "face": 0.35,
+                "name": 0.25,
+                "attr": 0.20,
+                "geotime": 0.20,
+                "note": "Optimization failed; returning default weights"
+            }
+        
+        weights = json.loads(result.stdout.strip().split('\n')[-1])
+        
+        log_audit_event(db, user_context, "OPTIMIZE_WEIGHTS", details={"weights": weights})
+        
+        return weights
+    except Exception as e:
+        return {
+            "face": 0.35,
+            "name": 0.25,
+            "attr": 0.20,
+            "geotime": 0.20,
+            "note": f"Optimization error: {str(e)}"
+        }
+

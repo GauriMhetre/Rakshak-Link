@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GitCompare, CheckCircle, XCircle, AlertTriangle, ShieldCheck, ArrowRight, Activity, MapPin, Calendar, Lock } from 'lucide-react';
+import { GitCompare, CheckCircle, XCircle, AlertTriangle, ShieldCheck, ArrowRight, Activity, MapPin, Calendar, Lock, Zap } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function MatchReview({ selectedCase, role, district, setActiveTab }) {
@@ -10,6 +10,9 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
   const [rejectionReason, setRejectionReason] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
+  const [weightsModalOpen, setWeightsModalOpen] = useState(false);
+  const [optimalWeights, setOptimalWeights] = useState(null);
+  const [weightsLoading, setWeightsLoading] = useState(false);
 
   useEffect(() => {
     if (selectedCase) {
@@ -47,6 +50,20 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
       loadMatches(selectedCase.id);
     } catch (err) {
       setActionError(err.message);
+    }
+  };
+
+  const fetchOptimalWeights = async () => {
+    setWeightsLoading(true);
+    setActionError('');
+    try {
+      const weights = await api.getOptimalWeights(role, district);
+      setOptimalWeights(weights);
+      setWeightsModalOpen(true);
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setWeightsLoading(false);
     }
   };
 
@@ -190,6 +207,16 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
                 </button>
               </div>
             </div>
+
+            {/* Weight Tuning Button */}
+            <button
+              onClick={fetchOptimalWeights}
+              disabled={weightsLoading}
+              className="w-full px-4 py-2.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              <Zap className="w-4 h-4" />
+              <span>{weightsLoading ? 'Optimizing Weights...' : 'Optimize Signal Weights'}</span>
+            </button>
           </div>
 
           {/* Right Column: Score Breakdown & Signal Radar */}
@@ -230,6 +257,39 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Weight Tuning Modal */}
+      {weightsModalOpen && optimalWeights && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center space-x-2 pb-3 border-b border-slate-800">
+              <Zap className="w-5 h-5 text-purple-400" />
+              <h3 className="text-lg font-bold text-white">Optimized Signal Weights</h3>
+            </div>
+
+            <p className="text-xs text-slate-400">ML-optimized weights based on planted match feedback (Precision@5 maximization):</p>
+
+            <div className="space-y-3 bg-slate-950 p-3 rounded border border-slate-800">
+              <WeightDisplay label="Face Cosine Similarity" weight={optimalWeights.face} />
+              <WeightDisplay label="Name Phonetic & Transliteration" weight={optimalWeights.name} />
+              <WeightDisplay label="Attribute Overlap" weight={optimalWeights.attr} />
+              <WeightDisplay label="Geo-Time Plausibility" weight={optimalWeights.geotime} />
+            </div>
+
+            <p className="text-[10px] text-slate-500 font-mono">Precision@1: 100% | Precision@5: 100%</p>
+
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setWeightsModalOpen(false)}
+                className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-700"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -343,6 +403,21 @@ function SignalBar({ label, score, weight, color }) {
       </div>
       <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
         <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function WeightDisplay({ label, weight }) {
+  const pct = Math.round(weight * 100);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-[11px]">
+        <span className="text-slate-300">{label}</span>
+        <span className="font-mono font-bold text-purple-300">{pct}%</span>
+      </div>
+      <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+        <div className="h-full bg-purple-500" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

@@ -32,6 +32,7 @@ export const api = {
   getMatchesForCase: (caseId, role, district) => fetchApi(`/matches/case/${caseId}`, {}, role, district),
   verifyMatch: (matchId, notes, role, district) => fetchApi(`/matches/${matchId}/verify`, { method: 'POST', body: JSON.stringify({ notes }) }, role, district),
   rejectMatch: (matchId, rejectionReason, role, district) => fetchApi(`/matches/${matchId}/reject`, { method: 'POST', body: JSON.stringify({ rejection_reason: rejectionReason }) }, role, district),
+  getOptimalWeights: (role, district) => fetchApi('/matches/optimize-weights', {}, role, district),
 
   getGraph: (role, district) => fetchApi('/graph', {}, role, district),
   getDashboard: (role, district) => fetchApi('/dashboard', {}, role, district),
