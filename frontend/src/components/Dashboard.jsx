@@ -32,7 +32,7 @@ export default function Dashboard({ role, district, setActiveTab, onSelectCase }
   return (
     <div className="space-y-6">
       {/* Metric Cards Banner */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <MetricCard
           title="TOTAL OPEN CASES"
           value={m.total_open_cases}
