@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/dist",
+  "env": {
+    "VITE_API_URL": "@rakshak_api_url"
+  },
+  "rewrites": [
+    { "source": "/(?!api/.*)", "destination": "/index.html" }
+  ]
+}
