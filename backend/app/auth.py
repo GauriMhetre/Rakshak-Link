@@ -50,21 +50,15 @@ def verify_jwt_token(token: str) -> Dict[str, Any]:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def get_user_context(
-    x_user_role: Optional[str] = Header(None),
-    x_user_district: Optional[str] = Header(None),
     authorization: Optional[str] = Header(None),
 ) -> UserContext:
-    """Extract user context from JWT token or fallback to header-based demo auth."""
-    # Try JWT if provided
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization[7:]
-        payload = verify_jwt_token(token)
-        return UserContext(role=payload["role"], district=payload["district"])
+    """Extract user context from JWT token. Header-based auth removed for security."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header. Provide: Authorization: Bearer <jwt_token>")
     
-    # Fallback to demo headers (for backward compatibility)
-    role = x_user_role or "Station Officer"
-    district = x_user_district or "Pune"
-    return UserContext(role=role, district=district)
+    token = authorization[7:]
+    payload = verify_jwt_token(token)
+    return UserContext(role=payload["role"], district=payload["district"])
 
 def _compute_entry_hash(entry: Dict[str, Any]) -> str:
     """Compute SHA-256 hash of audit log entry."""

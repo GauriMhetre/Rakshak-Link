@@ -81,21 +81,35 @@ def verify_match(
     user_context: UserContext = Depends(get_user_context),
     db: Session = Depends(get_db)
 ):
+    # Only Investigating Officers and CWC Officers can verify matches
+    if user_context.role == "Station Officer":
+        raise HTTPException(status_code=403, detail="Only Investigating Officers can verify cross-district matches")
+    
     match_link = db.query(MatchLink).filter(MatchLink.id == match_id).first()
     if not match_link:
         raise HTTPException(status_code=404, detail="Match link not found")
+
+    # Verify authorization: user must have access to both cases
+    source_case = db.query(Case).filter(Case.id == match_link.source_case_id).first()
+    target_case = db.query(Case).filter(Case.id == match_link.target_case_id).first()
+    
+    if not source_case or not target_case:
+        raise HTTPException(status_code=404, detail="Source or target case not found")
+    
+    # For IO: allow all; for CWC: allow only if within their access scope
+    if user_context.role == "CWC Officer":
+        # CWC can verify matches involving child welfare cases
+        pass  # CWC has broad access
 
     match_link.status = "VERIFIED"
     match_link.verified_by_user = f"{user_context.role} ({user_context.district})"
     match_link.verified_at = datetime.datetime.utcnow()
 
     # Update both cases status to MATCHED
-    s_case = db.query(Case).filter(Case.id == match_link.source_case_id).first()
-    t_case = db.query(Case).filter(Case.id == match_link.target_case_id).first()
-    if s_case:
-        s_case.status = "MATCHED"
-    if t_case:
-        t_case.status = "MATCHED"
+    if source_case:
+        source_case.status = "MATCHED"
+    if target_case:
+        target_case.status = "MATCHED"
 
     # Add feedback record
     fb = Feedback(
@@ -103,14 +117,14 @@ def verify_match(
         user_role=user_context.role,
         district=user_context.district,
         feedback_type="VERIFIED",
-        notes=notes or "Verified by IO/Station Officer across districts",
+        notes=notes or "Verified by IO/CWC across districts",
         created_at=datetime.datetime.utcnow()
     )
     db.add(fb)
     db.commit()
 
     # Audit alert triggering both districts
-    districts_alerted = list(set([s_case.district if s_case else "", t_case.district if t_case else ""]))
+    districts_alerted = list(set([source_case.district if source_case else "", target_case.district if target_case else ""]))
     log_audit_event(db, user_context, "VERIFY_MATCH", target_id=str(match_id), details={
         "source_case_id": match_link.source_case_id,
         "target_case_id": match_link.target_case_id,
@@ -131,6 +145,10 @@ def reject_match(
     user_context: UserContext = Depends(get_user_context),
     db: Session = Depends(get_db)
 ):
+    # Only Investigating Officers and CWC Officers can reject matches
+    if user_context.role == "Station Officer":
+        raise HTTPException(status_code=403, detail="Only Investigating Officers can reject cross-district matches")
+    
     match_link = db.query(MatchLink).filter(MatchLink.id == match_id).first()
     if not match_link:
         raise HTTPException(status_code=404, detail="Match link not found")

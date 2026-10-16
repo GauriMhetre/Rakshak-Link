@@ -11,6 +11,11 @@ def get_graph(
     user_context: UserContext = Depends(get_user_context),
     db: Session = Depends(get_db)
 ):
+    # Only Investigating Officers can view the full trafficking network
+    if user_context.role != "Investigating Officer":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Only Investigating Officers can access the trafficking graph")
+    
     graph_data = build_trafficking_graph(db)
 
     log_audit_event(db, user_context, "VIEW_GRAPH", details={

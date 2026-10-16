@@ -119,17 +119,25 @@ def verify_audit_chain(
     user_context: UserContext = Depends(get_user_context),
     db: Session = Depends(get_db)
 ):
-    """Verify the integrity of the audit log hash chain."""
+    """Verify the integrity of the audit log hash chain with gap/deletion detection."""
     audit_entries = db.query(AuditLog).order_by(AuditLog.id).all()
     
     if not audit_entries:
         return {"status": "OK", "entries_verified": 0, "tampering_detected": False}
     
-    # Verify hash chain
+    # Verify hash chain and detect gaps/deletions
     previous_hash = "0" * 64  # Genesis
     tampering_detected = False
+    tampering_details = []
+    last_id = None
     
     for entry in audit_entries:
+        # Check for ID gaps (indicates deletion)
+        if last_id is not None and entry.id != last_id + 1:
+            tampering_detected = True
+            gap_count = entry.id - last_id - 1
+            tampering_details.append(f"Gap detected: ID {last_id} → {entry.id} (missing {gap_count} entries)")
+        
         # Recompute expected hash
         entry_data = {
             "timestamp": entry.timestamp.isoformat(),
@@ -145,16 +153,18 @@ def verify_audit_chain(
         # Check if chain link is valid
         if entry.previous_hash != previous_hash:
             tampering_detected = True
-            break
+            tampering_details.append(f"Entry {entry.id}: previous_hash mismatch")
         
         if entry.entry_hash != expected_hash:
             tampering_detected = True
-            break
+            tampering_details.append(f"Entry {entry.id}: entry_hash mismatch (tampering or corruption)")
         
         previous_hash = entry.entry_hash
+        last_id = entry.id
     
     return {
         "status": "TAMPERED" if tampering_detected else "OK",
         "entries_verified": len(audit_entries),
         "tampering_detected": tampering_detected,
+        "tampering_details": tampering_details if tampering_detected else [],
     }

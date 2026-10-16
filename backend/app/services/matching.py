@@ -181,11 +181,15 @@ def evaluate_match_score(c1_dict: Dict[str, Any], c2_dict: Dict[str, Any]) -> Di
     total_score = (0.35 * face_sim) + (0.25 * name_sim) + (0.20 * attr_sim) + (0.20 * geotime_sim)
 
     # Flag phone match bonus if shared phone numbers exist
-    phones1 = set(c1_dict.get("phone_numbers") or [])
-    phones2 = set(c2_dict.get("phone_numbers") or [])
+    # Validate phone format before crediting the bonus
+    phones1 = set([p for p in (c1_dict.get("phone_numbers") or []) if isinstance(p, str) and len(p) >= 10])
+    phones2 = set([p for p in (c2_dict.get("phone_numbers") or []) if isinstance(p, str) and len(p) >= 10])
     shared_phones = list(phones1.intersection(phones2))
-    if shared_phones:
-        total_score = min(1.0, total_score + 0.10)
+    
+    # Only add bonus if valid shared phones exist (verified format)
+    if shared_phones and len(shared_phones) > 0:
+        # Add smaller bonus (5%) to reduce exploitability
+        total_score = min(1.0, total_score + 0.05)
 
     breakdown = {
         "face_score": round(face_sim, 3),
