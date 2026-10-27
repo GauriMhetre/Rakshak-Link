@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_URL || process.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export async function fetchApi(endpoint, options = {}, role = 'Station Officer', district = 'Pune') {
   const headers = {
