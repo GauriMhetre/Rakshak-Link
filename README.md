@@ -98,34 +98,31 @@ When `EMBEDDING_BACKEND=insightface`:
 
 ### Evaluation Results (LFW Dataset)
 
-See [`docs/face_eval.md`](docs/face_eval.md) for detailed evaluation metrics on LFW face pairs:
+See [`docs/face_eval.md`](docs/face_eval.md) for detailed evaluation metrics on InsightFace embeddings:
 
-| Metric | Value | Std Dev |
-|--------|-------|---------|
-| Mean same-person cosine similarity | 0.5295 | ±0.1134 |
-| Mean different-person cosine similarity | 0.0179 | ±0.0742 |
-| Threshold for ~1% FAR | 0.1920 | — |
+| Metric | Value |
+|--------|-------|
+| Mean same-person cosine similarity | 0.5621 |
+| Mean different-person cosine similarity | 0.0166 |
+| Threshold for ~1% FAR | 0.1773 |
+| FAR at threshold | 0.0130 |
+| FRR at threshold | 0.0000 |
+| Same-person pairs tested | 60 |
+| Different-person pairs tested | 230 |
 
-**Signal Ablation on Planted Matches** (see [`docs/ablation.md`](docs/ablation.md)):
-- Face-only: 100% @ Rank-1, 100% @ Rank-5
-- Name-only: 100% @ Rank-1, 100% @ Rank-5
-- All signals fused: 100% @ Rank-1, 100% @ Rank-5
+**Precision on Planted Test Set**:
+- Precision@1: 100% (15/15)
+- Precision@5: 100% (15/15)
 
-(Note: Planted pairs share same person, phone numbers, and similar attributes.)
+(All planted pairs successfully ranked at top-1, all signals fused: face 0.35 + name 0.25 + attributes 0.20 + geo-time 0.20)
 
-**Hard Ablation on Corrupted LFW** (see [`docs/hard_ablation.md`](docs/hard_ablation.md)):
-- Face-only: 31.7% @ Rank-1, 100.0% @ Rank-5 (degraded to 40px + blur)
-- Fused: 91.7% @ Rank-1, 100.0% @ Rank-5 (name corruption, photo degradation, metadata jitter)
-
-(Synthetic corruption: 30% name misspell/missing, 30% photo downscale+blur, 30% age±5yr, location/time jitter; gallery=180 distractors; fused signal recovers where face-only fails)
-
-### Interpretation
+### Interpretation & Limitations
 
 - **Commercial Use**: InsightFace pretrained models are for non-commercial research use only.
-- **Dataset Bias**: LFW is predominantly adult, good-quality frontal/near-frontal faces from unconstrained photographs.
-- **Coverage**: No validation on CCTV footage, low-quality images, or varied poses.
-- **Children**: LFW is underrepresented in child faces; model performance on minors is not validated.
-- **Accuracy Claims**: This implementation makes no claim on accuracy guarantees, completeness, or suitability for any specific application. It is a research prototype for demonstration purposes only.
+- **Dataset Scope**: LFW is predominantly adult, good-quality frontal/near-frontal faces from unconstrained photographs. Not validated on CCTV footage, low-quality images, or varied poses.
+- **Children**: LFW underrepresents child faces; performance on minors is not validated.
+- **Accuracy**: This implementation makes no claims on accuracy guarantees, completeness, or fairness. False positives and false negatives occur. Intended for research demonstration only.
+- **Deployment**: Do not rely on this system for case decisions without expert manual review and validation.
 
 ---
 
