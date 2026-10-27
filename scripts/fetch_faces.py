@@ -1,58 +1,41 @@
 #!/usr/bin/env python3
-"""
-Fetch LFW faces and export 2 photos per person for 60 people.
-"""
+"""Fetch LFW faces and export to data/faces/<id>/{0,1}.jpg"""
 import os
-import json
-from sklearn.datasets import fetch_lfw_people
+import numpy as np
+from pathlib import Path
 from PIL import Image
+from sklearn.datasets import fetch_lfw_people
 
-def fetch_and_export_faces():
-    print("Fetching LFW dataset (min_faces_per_person=2)...")
-    lfw = fetch_lfw_people(min_faces_per_person=2)
-    
-    target_names = lfw.target_names
-    targets = lfw.target
-    data = lfw.images  # shape: (n_samples, h, w)
-    
-    # Group by person
-    person_photos = {}
-    for idx, person_id in enumerate(targets):
-        person_name = target_names[person_id]
-        if person_name not in person_photos:
-            person_photos[person_name] = []
-        person_photos[person_name].append(data[idx])
-    
-    # Select first 60 people with at least 2 photos each
-    selected_people = [(name, photos) for name, photos in person_photos.items() 
-                       if len(photos) >= 2][:60]
-    
-    os.makedirs("data/faces", exist_ok=True)
-    
-    exported_count = 0
-    for person_id, (person_name, photos) in enumerate(selected_people):
-        person_dir = f"data/faces/{person_id:03d}"
-        os.makedirs(person_dir, exist_ok=True)
-        
-        # Export first 2 photos
-        for photo_idx in range(2):
-            photo_data = photos[photo_idx]
-            img = Image.fromarray((photo_data * 255).astype('uint8'))
-            img.save(f"{person_dir}/{photo_idx}.jpg")
-        
-        exported_count += 1
-    
-    print(f"Exported {exported_count} people × 2 photos to data/faces/")
-    
-    # Save metadata
-    metadata = {
-        "person_count": exported_count,
-        "photos_per_person": 2,
-        "source": "LFW via sklearn",
-    }
-    with open("docs/face_eval_metadata.json", "w") as f:
-        json.dump(metadata, f, indent=2)
-    print(f"Metadata saved to docs/face_eval_metadata.json")
+DATA_DIR = Path("data/faces")
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-if __name__ == "__main__":
-    fetch_and_export_faces()
+print("Fetching LFW people (min_faces_per_person=2)...")
+lfw = fetch_lfw_people(min_faces_per_person=2, download_if_missing=True, color=True)
+
+# lfw is a Bunch with: images, target, data, target_names, DESCR
+# Group images by person
+people_images = {}
+for img, person_id in zip(lfw.images, lfw.target):
+    if person_id not in people_images:
+        people_images[person_id] = []
+    people_images[person_id].append(img)
+
+# Export first 60 people, 2 photos each
+people_exported = 0
+for person_id in sorted(people_images.keys())[:60]:
+    images = people_images[person_id]
+    if len(images) < 2:
+        continue
+
+    person_dir = DATA_DIR / f"person_{person_id:03d}"
+    person_dir.mkdir(parents=True, exist_ok=True)
+
+    for photo_num in range(2):
+        img_array = images[photo_num]
+        img = Image.fromarray((img_array * 255).astype('uint8'))
+        img.save(person_dir / f"{photo_num}.jpg")
+
+    people_exported += 1
+
+print(f"Exported {people_exported} people to {DATA_DIR}")
+
