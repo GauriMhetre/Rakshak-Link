@@ -121,7 +121,8 @@ def seed_db():
     case_counter = 1000
     
     # Check if real faces are available and backend is insightface
-    faces_dir = Path("data/faces")
+    # Resolve path relative to project root (parent of backend/)
+    faces_dir = Path(__file__).parent.parent / "data" / "faces"
     use_real_faces = faces_dir.exists() and os.getenv("EMBEDDING_BACKEND", "synthetic").lower() == "insightface"
     
     if use_real_faces:
