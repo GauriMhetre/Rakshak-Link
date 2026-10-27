@@ -1,6 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
 
+// Knowledge base for Rakhi
+const RAKHI_KNOWLEDGE_BASE = {
+  'file a missing person report': 'To file a missing person report, go to **File Intake Report** tab. Click "Report Missing Person", fill in details like name, age, photo, marks, and location last seen. Press Submit. Your report goes to all 4 districts immediately! 📍',
+  'match review': 'The **Match Review** tab shows AI-found candidates for missing cases. Each match has a "Fused Score" combining face recognition (35%), name similarity (25%), physical attributes (20%), and location/time feasibility (20%). Review and verify or reject matches.',
+  'audit trail': 'The **Audit Trail** is an immutable record of every action in Rakshak Link - who accessed what, when, and why. It uses SHA-256 hash-chain technology to detect any tampering. Essential for compliance! 🔐',
+  'dashboard': 'The **Dashboard** shows live stats: open cases, probable matches, verified links, trafficking syndicates detected, and match accuracy (Precision@5). Click metric cards to dive deeper! 📊',
+  'case directory': 'The **Case Directory** lets you browse all missing/found person reports across Pune, Mumbai Suburban, Thane, and Nagpur. Filter by district, case type, or search by name. 🔍',
+  'trafficking graph': 'The **Trafficking Graph** visualizes criminal networks. Nodes are cases, edges connect shared phone numbers or locations. Syndicates (3+ linked cases) are flagged in red. Powered by NetworkX! 🕸️',
+  'how does matching work': 'Rakshak Link uses InsightFace AI (512-dimensional face embeddings) + name phonetics + physical attributes + geography/time. All signals fuse into a single score. No single metric dominates—holistic matching! 🧠',
+  'what is insightface': 'InsightFace is a deep learning model that converts faces to 512-dimensional vectors. Same person = vectors close together. Different person = vectors far apart. We compare vectors to find matches! 👤',
+  'who can verify matches': 'Only **Investigating Officers** and **CWC Officers** can verify matches across districts. Station Officers can view but not verify (security safeguard). Once verified, both districts get an alert! 🚨',
+  'default': 'Hi! I\'m Rakhi, your AI guide. 🤖 Ask me about: Dashboard, Case Directory, File Intake Report, Match Review, Trafficking Graph, Audit Trail, or how matching works! What would you like to know? 💭'
+};
+
 export default function RakhiChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -23,7 +37,44 @@ export default function RakhiChatbot() {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = async () => {
+  const findAnswer = (question) => {
+    const q = question.toLowerCase().trim();
+    
+    // Exact match
+    if (RAKHI_KNOWLEDGE_BASE[q]) {
+      return RAKHI_KNOWLEDGE_BASE[q];
+    }
+    
+    // Partial match
+    for (const [key, answer] of Object.entries(RAKHI_KNOWLEDGE_BASE)) {
+      if (key !== 'default' && (q.includes(key) || key.includes(q))) {
+        return answer;
+      }
+    }
+    
+    // Try with keywords
+    const keywords = {
+      'file|report|missing': RAKHI_KNOWLEDGE_BASE['file a missing person report'],
+      'match|review|score': RAKHI_KNOWLEDGE_BASE['match review'],
+      'audit|trail|log': RAKHI_KNOWLEDGE_BASE['audit trail'],
+      'dashboard|stat|metric': RAKHI_KNOWLEDGE_BASE['dashboard'],
+      'case|directory|browse': RAKHI_KNOWLEDGE_BASE['case directory'],
+      'graph|network|syndicate': RAKHI_KNOWLEDGE_BASE['trafficking graph'],
+      'face|ai|embedding|insightface': RAKHI_KNOWLEDGE_BASE['what is insightface'],
+      'verify|io|officer': RAKHI_KNOWLEDGE_BASE['who can verify matches'],
+    };
+    
+    for (const [pattern, answer] of Object.entries(keywords)) {
+      const regex = new RegExp(pattern, 'i');
+      if (regex.test(q)) {
+        return answer;
+      }
+    }
+    
+    return RAKHI_KNOWLEDGE_BASE['default'];
+  };
+
+  const sendMessage = () => {
     if (!input.trim()) return;
 
     // Add user message
@@ -37,74 +88,18 @@ export default function RakhiChatbot() {
     setInput('');
     setLoading(true);
 
-    try {
-      // Call Perplexity API
-      const apiKey = import.meta.env.VITE_PERPLEXITY_API_KEY;
-      if (!apiKey) {
-        throw new Error('API key not configured');
-      }
-
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'llama-2-7b-chat',
-          messages: [
-            {
-              role: 'system',
-              content: `You are Rakhi, a cute and helpful AI assistant for Rakshak Link - a cross-district missing person and anti-trafficking intelligence portal. 
-              
-Your role is to help users understand and navigate the application. Be friendly, concise, and always relate your answers back to how the app works.
-
-Key features to mention when relevant:
-- Dashboard: View case statistics, probable matches, and trafficking syndicates
-- Case Directory: Browse and search missing/found person cases across 4 districts (Pune, Mumbai, Thane, Nagpur)
-- File Intake Report: Report new missing or found persons
-- Match Review: Evaluate multi-signal candidate matches (face, name, attributes, location/time)
-- Trafficking Graph: View trafficking network clusters and phone number connections
-- Audit Trail: Immutable record of all system actions for compliance
-
-Keep responses helpful, supportive, and under 150 words. Use emojis occasionally to be cute and friendly.`
-            },
-            ...messages.map(msg => ({
-              role: msg.sender === 'user' ? 'user' : 'assistant',
-              content: msg.text
-            })),
-            { role: 'user', content: input }
-          ],
-          max_tokens: 200,
-          temperature: 0.7,
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.choices && data.choices[0]?.message?.content) {
-        const rakhiMsg = {
-          id: messages.length + 2,
-          sender: 'rakhi',
-          text: data.choices[0].message.content,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, rakhiMsg]);
-      } else {
-        throw new Error('No response from API');
-      }
-    } catch (err) {
-      console.error('Chatbot error:', err);
-      const errorMsg = {
+    // Simulate thinking time
+    setTimeout(() => {
+      const answer = findAnswer(input);
+      const rakhiMsg = {
         id: messages.length + 2,
         sender: 'rakhi',
-        text: 'Oops! I hit a little snag. 😅 Try asking me something about the app, like "How do I file a missing person report?" or "What does the Match Review tab do?"',
+        text: answer,
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
+      setMessages(prev => [...prev, rakhiMsg]);
       setLoading(false);
-    }
+    }, 800);
   };
 
   return (
