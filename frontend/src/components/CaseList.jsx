@@ -16,12 +16,11 @@ export default function CaseList({ role, district, onSelectCase, setActiveTab })
   const loadCases = async () => {
     setLoading(true);
     try {
-      // Note: We pass district through the api function params, not as a query filter
-      const filterDistrict = districtFilter || district; // Use selected district or fall back to user's district
+      // Station Officers can only see their own district, so don't pass district as param
       const data = await api.getCases(
         { type: typeFilter || undefined, search: search || undefined },
         role,
-        filterDistrict
+        district
       );
       setCases(data);
     } catch (err) {
