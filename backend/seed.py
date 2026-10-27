@@ -2,23 +2,38 @@ import os
 import random
 import datetime
 import numpy as np
+from pathlib import Path
 from sqlalchemy.orm import Session
-from backend.app.database import engine, Base, SessionLocal
-from backend.app.models import Case, MatchLink, Feedback, AuditLog
+from app.database import engine, Base, SessionLocal
+from app.models import Case, MatchLink, Feedback, AuditLog
+from app.services.matching import EMBEDDING_DIM
 
 # Pluggable deterministic synthetic embedding generator
 def generate_synthetic_embedding(seed_str: str, noise_level: float = 0.0) -> list[float]:
     # Hash seed_str to create a base seed integer
     seed_val = int(abs(hash(seed_str))) % (2**32)
     rng = np.random.RandomState(seed_val)
-    vec = rng.randn(128)
+    vec = rng.randn(EMBEDDING_DIM)
     if noise_level > 0:
-        noise = np.random.randn(128) * noise_level
+        noise = np.random.randn(EMBEDDING_DIM) * noise_level
         vec = vec + noise
     norm = np.linalg.norm(vec)
     if norm > 0:
         vec = vec / norm
     return vec.tolist()
+
+def load_real_face_embedding(photo_path: str) -> list[float]:
+    """Load real face embedding from InsightFace."""
+    try:
+        from app.services.insightface_extractor import InsightFaceExtractor
+        extractor = InsightFaceExtractor()
+        emb = extractor.extract_embedding(photo_path)
+        if emb is None:
+            return generate_synthetic_embedding(f"fallback_{photo_path}")
+        return emb
+    except Exception as e:
+        print(f"  Warning: failed to extract face from {photo_path}: {e}")
+        return generate_synthetic_embedding(f"fallback_{photo_path}")
 
 DISTRICT_COORDS = {
     "Pune": (18.5204, 73.8567),
@@ -104,6 +119,22 @@ def seed_db():
 
     now = datetime.datetime.utcnow()
     case_counter = 1000
+    
+    # Check if real faces are available and backend is insightface
+    # Resolve path relative to project root (parent of backend/)
+    faces_dir = Path(__file__).parent.parent / "data" / "faces"
+    use_real_faces = faces_dir.exists() and os.getenv("EMBEDDING_BACKEND", "synthetic").lower() == "insightface"
+    
+    if use_real_faces:
+        person_dirs = sorted([d for d in faces_dir.iterdir() if d.is_dir()])
+        real_face_paths = [str(person_dirs[i] / f"{j}.jpg") for i in range(len(person_dirs)) for j in range(2)]
+        print(f"Using {len(person_dirs)} real face pairs from data/faces/")
+    else:
+        real_face_paths = []
+        if not faces_dir.exists():
+            print("data/faces/ not found, using synthetic embeddings")
+        elif os.getenv("EMBEDDING_BACKEND", "synthetic").lower() != "insightface":
+            print(f"EMBEDDING_BACKEND={os.getenv('EMBEDDING_BACKEND')}, using synthetic embeddings")
 
     print("Seeding planted cross-district matches...")
     # 1. Plant 15 pairs (30 cases total)
@@ -112,9 +143,18 @@ def seed_db():
         found = item["found"]
         shared_person_key = f"planted_person_{idx}"
 
-        # Base vector embedding with slight noise for realistic cosine similarity (~0.90)
-        missing_vec = generate_synthetic_embedding(shared_person_key, noise_level=0.0)
-        found_vec = generate_synthetic_embedding(shared_person_key, noise_level=0.15)
+        # Use real faces if available; pair photo0 and photo1 from same LFW person
+        if use_real_faces and idx < len(person_dirs):
+            person_id = idx % len(person_dirs)
+            photo0_path = str(faces_dir / f"{person_id:03d}" / "0.jpg")
+            photo1_path = str(faces_dir / f"{person_id:03d}" / "1.jpg")
+            missing_vec = load_real_face_embedding(photo0_path)
+            found_vec = load_real_face_embedding(photo1_path)
+            print(f"  Planted match {idx}: using real LFW person {person_id}")
+        else:
+            # Synthetic: base vector embedding with slight noise for realistic cosine similarity (~0.90)
+            missing_vec = generate_synthetic_embedding(shared_person_key, noise_level=0.0)
+            found_vec = generate_synthetic_embedding(shared_person_key, noise_level=0.15)
 
         # Dist coordinate offset
         m_base_lat, m_base_lng = DISTRICT_COORDS[missing["district"]]
@@ -183,6 +223,9 @@ def seed_db():
     districts = ["Pune", "Mumbai Suburban", "Thane", "Nagpur"]
     types = ["MISSING", "FOUND"]
     sexes = ["MALE", "FEMALE"]
+    
+    # Use remaining real faces for distractors if available
+    real_face_idx = 15 if use_real_faces else 0  # Skip first 15 (used for planted matches)
 
     for i in range(170):
         case_counter += 1
@@ -194,7 +237,16 @@ def seed_db():
         days_ago = random.randint(1, 60)
         c_phone = f"+91{random.randint(9000000000, 9999999999)}"
         c_name = f"{fn} {ln}"
-        vec = generate_synthetic_embedding(f"distractor_{i}_{c_name}")
+        
+        # Use real faces for distractors if available
+        if use_real_faces and real_face_idx < len(person_dirs):
+            person_id = real_face_idx % len(person_dirs)
+            photo_idx = (real_face_idx // len(person_dirs)) % 2
+            photo_path = str(faces_dir / f"{person_id:03d}" / f"{photo_idx}.jpg")
+            vec = load_real_face_embedding(photo_path)
+            real_face_idx += 1
+        else:
+            vec = generate_synthetic_embedding(f"distractor_{i}_{c_name}")
 
         case = Case(
             case_number=f"CAS-2026-R{case_counter}",

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.auth import get_user_context, UserContext, log_audit_event
-from backend.app.services.graph_service import build_trafficking_graph
+from app.database import get_db
+from app.auth import get_user_context, UserContext, log_audit_event
+from app.services.graph_service import build_trafficking_graph
 
 router = APIRouter(prefix="/api/graph", tags=["Graph"])
 
@@ -11,6 +11,11 @@ def get_graph(
     user_context: UserContext = Depends(get_user_context),
     db: Session = Depends(get_db)
 ):
+    # Only Investigating Officers can view the full trafficking network
+    if user_context.role != "Investigating Officer":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Only Investigating Officers can access the trafficking graph")
+    
     graph_data = build_trafficking_graph(db)
 
     log_audit_event(db, user_context, "VIEW_GRAPH", details={

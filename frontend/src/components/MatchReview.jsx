@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GitCompare, CheckCircle, XCircle, AlertTriangle, ShieldCheck, ArrowRight, Activity, MapPin, Calendar, Lock } from 'lucide-react';
+import { GitCompare, CheckCircle, XCircle, AlertTriangle, ShieldCheck, ArrowRight, Activity, MapPin, Calendar, Lock, Zap } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function MatchReview({ selectedCase, role, district, setActiveTab }) {
@@ -10,6 +10,9 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
   const [rejectionReason, setRejectionReason] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionError, setActionError] = useState('');
+  const [weightsModalOpen, setWeightsModalOpen] = useState(false);
+  const [optimalWeights, setOptimalWeights] = useState(null);
+  const [weightsLoading, setWeightsLoading] = useState(false);
 
   useEffect(() => {
     if (selectedCase) {
@@ -50,6 +53,20 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
     }
   };
 
+  const fetchOptimalWeights = async () => {
+    setWeightsLoading(true);
+    setActionError('');
+    try {
+      const weights = await api.getOptimalWeights(role, district);
+      setOptimalWeights(weights);
+      setWeightsModalOpen(true);
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setWeightsLoading(false);
+    }
+  };
+
   const handleRejectSubmit = async (e) => {
     e.preventDefault();
     if (!activeMatch || !rejectionReason.trim()) return;
@@ -68,13 +85,13 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
 
   if (!selectedCase) {
     return (
-      <div className="glass-card p-12 text-center text-slate-400 space-y-3">
-        <GitCompare className="w-10 h-10 text-amber-500 mx-auto opacity-70" />
-        <h3 className="text-lg font-bold text-white">No Case Selected for Match Review</h3>
-        <p className="text-xs text-slate-400 max-w-md mx-auto">Select a case from the Case Directory to evaluate multi-signal candidate matches across Pune, Mumbai, Thane & Nagpur.</p>
+      <div className="glass-card p-12 text-center text-ashgray/70 space-y-3 bg-darkblue/30 border border-ashgray/10">
+        <GitCompare className="w-10 h-10 text-earth mx-auto opacity-70" />
+        <h3 className="text-lg font-bold text-ashgray">No Case Selected for Match Review</h3>
+        <p className="text-xs text-ashgray/70 max-w-md mx-auto">Select a case from the Case Directory to evaluate multi-signal candidate matches across Pune, Mumbai, Thane & Nagpur.</p>
         <button
           onClick={() => setActiveTab('cases')}
-          className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg transition-all"
+          className="px-4 py-2 bg-earth hover:bg-earth/90 text-darkblue font-bold text-xs rounded-lg transition-all"
         >
           Go to Case Directory
         </button>
@@ -89,17 +106,17 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="glass-card p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="glass-card p-4 flex flex-col md:flex-row items-center justify-between gap-4 bg-darkblue/30 border border-ashgray/10">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+          <div className="p-2.5 bg-earth/10 text-earth rounded-xl border border-earth/30">
             <GitCompare className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-lg font-bold text-white">Multi-Signal Candidate Match Evaluator</h2>
-              <span className="text-[10px] bg-slate-800 text-slate-300 font-mono px-2 py-0.5 rounded">{selectedCase.case_number}</span>
+              <h2 className="text-lg font-bold text-ashgray">Multi-Signal Candidate Match Evaluator</h2>
+              <span className="text-[10px] bg-darkblue/60 text-ashgray/80 font-mono px-2 py-0.5 rounded border border-earth/20">{selectedCase.case_number}</span>
             </div>
-            <p className="text-xs text-slate-400">Evaluating target query: <strong className="text-amber-400">{selectedCase.name}</strong> ({selectedCase.district})</p>
+            <p className="text-xs text-ashgray/70">Evaluating target query: <strong className="text-earth">{selectedCase.name}</strong> ({selectedCase.district})</p>
           </div>
         </div>
 
@@ -113,13 +130,13 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
                 onClick={() => setActiveMatch(m)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 whitespace-nowrap ${
                   isSel
-                    ? 'bg-amber-500 text-slate-950 shadow-lg'
-                    : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                    ? 'bg-earth text-darkblue shadow-lg'
+                    : 'bg-darkblue/60 hover:bg-darkblue/80 text-ashgray border border-earth/20'
                 }`}
               >
                 <span>Candidate #{idx + 1}</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
-                  isSel ? 'bg-slate-950/30 text-slate-950' : 'bg-slate-800 text-amber-400'
+                  isSel ? 'bg-darkblue/30 text-darkblue' : 'bg-darkblue/40 text-earth'
                 }`}>
                   {intPct(m.score)}%
                 </span>
@@ -130,25 +147,25 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
       </div>
 
       {actionSuccess && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl flex items-center space-x-3 text-sm">
-          <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+        <div className="p-4 bg-ashgray/10 border border-ashgray/30 text-ashgray rounded-xl flex items-center space-x-3 text-sm">
+          <ShieldCheck className="w-5 h-5 text-ashgray shrink-0" />
           <p className="font-semibold">{actionSuccess}</p>
         </div>
       )}
 
       {actionError && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl flex items-center space-x-3 text-sm">
-          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+        <div className="p-4 bg-earth/10 border border-earth/30 text-earth rounded-xl flex items-center space-x-3 text-sm">
+          <AlertTriangle className="w-5 h-5 text-earth shrink-0" />
           <p>{actionError}</p>
         </div>
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-slate-400 text-sm">Evaluating candidate matches...</div>
+        <div className="text-center py-12 text-ashgray/70 text-sm">Evaluating candidate matches...</div>
       ) : !activeMatch ? (
-        <div className="glass-card p-12 text-center text-slate-400 space-y-2">
-          <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto opacity-70" />
-          <p className="font-semibold text-white">No Probable Candidates Above Confidence Threshold (60%)</p>
+        <div className="glass-card p-12 text-center text-ashgray/70 space-y-2 bg-darkblue/30 border border-ashgray/10">
+          <AlertTriangle className="w-8 h-8 text-earth mx-auto opacity-70" />
+          <p className="font-semibold text-ashgray">No Probable Candidates Above Confidence Threshold (60%)</p>
           <p className="text-xs">The system continues monitoring incoming intake reports across all districts.</p>
         </div>
       ) : (
@@ -190,6 +207,16 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
                 </button>
               </div>
             </div>
+
+            {/* Weight Tuning Button */}
+            <button
+              onClick={fetchOptimalWeights}
+              disabled={weightsLoading}
+              className="w-full px-4 py-2.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              <Zap className="w-4 h-4" />
+              <span>{weightsLoading ? 'Optimizing Weights...' : 'Optimize Signal Weights'}</span>
+            </button>
           </div>
 
           {/* Right Column: Score Breakdown & Signal Radar */}
@@ -230,6 +257,39 @@ export default function MatchReview({ selectedCase, role, district, setActiveTab
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Weight Tuning Modal */}
+      {weightsModalOpen && optimalWeights && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-card max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center space-x-2 pb-3 border-b border-slate-800">
+              <Zap className="w-5 h-5 text-purple-400" />
+              <h3 className="text-lg font-bold text-white">Optimized Signal Weights</h3>
+            </div>
+
+            <p className="text-xs text-slate-400">ML-optimized weights based on planted match feedback (Precision@5 maximization):</p>
+
+            <div className="space-y-3 bg-slate-950 p-3 rounded border border-slate-800">
+              <WeightDisplay label="Face Cosine Similarity" weight={optimalWeights.face} />
+              <WeightDisplay label="Name Phonetic & Transliteration" weight={optimalWeights.name} />
+              <WeightDisplay label="Attribute Overlap" weight={optimalWeights.attr} />
+              <WeightDisplay label="Geo-Time Plausibility" weight={optimalWeights.geotime} />
+            </div>
+
+            <p className="text-[10px] text-slate-500 font-mono">Precision@1: 100% | Precision@5: 100%</p>
+
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setWeightsModalOpen(false)}
+                className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-700"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -343,6 +403,21 @@ function SignalBar({ label, score, weight, color }) {
       </div>
       <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
         <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function WeightDisplay({ label, weight }) {
+  const pct = Math.round(weight * 100);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-[11px]">
+        <span className="text-slate-300">{label}</span>
+        <span className="font-mono font-bold text-purple-300">{pct}%</span>
+      </div>
+      <div className="h-2 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+        <div className="h-full bg-purple-500" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

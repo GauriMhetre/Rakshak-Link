@@ -2,11 +2,11 @@ import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from backend.app.database import get_db
-from backend.app.models import Case, MatchLink
-from backend.app.schemas import CaseCreate, CaseResponse
-from backend.app.auth import get_user_context, UserContext, log_audit_event
-from backend.app.services.matching import default_extractor, evaluate_match_score
+from app.database import get_db
+from app.models import Case, MatchLink
+from app.schemas import CaseCreate, CaseResponse
+from app.auth import get_user_context, UserContext, log_audit_event
+from app.services.matching import default_extractor, evaluate_match_score
 
 router = APIRouter(prefix="/api/cases", tags=["Cases"])
 
@@ -27,13 +27,23 @@ def get_cases(
 ):
     query = db.query(Case)
 
-    # Scoping filter
+    # Scoping filter - enforce role-based access
     if user_context.role == "Station Officer":
+        # Station Officer can only see their own district cases (and any MATCHED cases for cross-district collaboration)
         if district and district != user_context.district:
-            # If specifically looking up another district's case list, allow restricted listing
+            # Attempting to access another district - DENY unless role has cross-district access
+            raise HTTPException(status_code=403, detail=f"Station Officer can only access cases from their own district: {user_context.district}")
+        query = query.filter((Case.district == user_context.district) | (Case.status == "MATCHED"))
+    elif user_context.role == "Investigating Officer":
+        # IO can see all cases across all districts
+        if district:
             query = query.filter(Case.district == district)
-        else:
-            query = query.filter((Case.district == user_context.district) | (Case.status == "MATCHED"))
+    elif user_context.role == "CWC Officer":
+        # CWC can see all districts
+        if district:
+            query = query.filter(Case.district == district)
+    else:
+        raise HTTPException(status_code=403, detail="Unknown role")
 
     if type:
         query = query.filter(Case.type == type)

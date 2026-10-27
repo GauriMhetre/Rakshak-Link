@@ -4,10 +4,10 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-xl shadow-2xl;
+    @apply bg-darkblue/30 backdrop-blur-md border border-ashgray/10 rounded-xl shadow-2xl;
   }
   .glass-card-hover {
-    @apply hover:border-amber-500/40 hover:bg-slate-900/95 transition-all duration-200;
+    @apply hover:border-earth/50 hover:bg-darkblue/40 transition-all duration-200;
   }
 }
 

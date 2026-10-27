@@ -2,11 +2,16 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from backend.app.database import Base, engine
-from backend.app.routers import cases, matches, graph, dashboard, audit
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.database import Base, engine
+from app.routers import cases, matches, graph, dashboard, audit
 
 # Ensure DB tables exist
 Base.metadata.create_all(bind=engine)
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 app = FastAPI(
     title="Rakshak Link API",
@@ -14,13 +19,21 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS configuration
+# Apply rate limiter to app
+app.state.limiter = limiter
+app.add_exception_handler(Exception, lambda request, exc: {"error": "Rate limit exceeded"})
+
+# CORS configuration - restrict to frontend only
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://*.vercel.app",  # Vercel deployment
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type", "X-User-Role", "X-User-District"],
 )
 
 # Mount API routers

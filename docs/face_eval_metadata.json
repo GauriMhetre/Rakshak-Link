@@ -1,0 +1,5 @@
+{
+  "person_count": 60,
+  "photos_per_person": 2,
+  "source": "LFW via sklearn"
+}

@@ -6,6 +6,7 @@ import IntakeForm from './components/IntakeForm';
 import MatchReview from './components/MatchReview';
 import GraphView from './components/GraphView';
 import AuditLogView from './components/AuditLogView';
+import RakhiChatbot from './components/RakhiChatbot';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -75,6 +76,8 @@ export default function App() {
           />
         )}
       </main>
+
+      <RakhiChatbot />
 
       <footer className="bg-slate-900/60 border-t border-slate-800 py-4 text-center text-xs text-slate-500">
         <p>Rakshak Link Prototype • AI-Powered Cross-District Missing Person & Anti-Trafficking Intelligence Portal</p>
